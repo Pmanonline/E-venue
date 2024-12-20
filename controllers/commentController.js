@@ -91,44 +91,6 @@ const getPostComments = async (req, res, next) => {
   }
 };
 
-// const likeComment = async (req, res, next) => {
-//   try {
-//     const comment = await Comment.findById(req.params.commentId);
-//     if (!comment) {
-//       return next(errorHandler(404, "Comment not found"));
-//     }
-
-//     const userId = req.body.userId;
-//     if (!userId) {
-//       return next(errorHandler(400, "User ID is required"));
-//     }
-
-//     const userIdString = userId.toString();
-//     const userIndex = comment.likes.findIndex(
-//       (id) => id.toString() === userIdString
-//     );
-
-//     if (userIndex === -1) {
-//       comment.likes.push(userId);
-//     } else {
-//       comment.likes.splice(userIndex, 1);
-//     }
-
-//     comment.numberOfLikes = comment.likes.length;
-//     await comment.save();
-
-//     // Populate the userId field before sending response
-//     const populatedComment = await Comment.findById(comment._id).populate(
-//       "userId",
-//       "username image _id"
-//     );
-
-//     res.status(200).json(populatedComment);
-//   } catch (error) {
-//     next(errorHandler(500, "Server error while liking comment"));
-//   }
-// };
-
 const likeComment = async (req, res, next) => {
   try {
     // Log the incoming request

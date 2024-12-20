@@ -1,124 +1,227 @@
-// // models/eventModel.js
 // const mongoose = require("mongoose");
 
-// const eventSchema = new mongoose.Schema({
-//   title: {
-//     type: String,
-//     required: true,
-//     trim: true,
-//   },
-//   eventType: {
-//     type: String,
-//     required: true,
-//     enum: ["conference", "workshop", "seminar", "webinar", "other"],
-//   },
-//   image: {
-//     type: String,
-//     default: null,
-//   },
-//   content: {
-//     type: String,
-//     required: true,
-//   },
-//   category: {
-//     type: String,
-//     required: true,
-//   },
-//   date: {
-//     type: Date,
-//     required: true,
-//   },
-//   venue: {
-//     type: String,
-//     required: true,
-//   },
-//   organizer: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: "User",
-//     required: true,
-//   },
-//   attendees: [
-//     {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "User",
+// const eventSchema = new mongoose.Schema(
+//   {
+//     title: {
+//       type: String,
+//       required: true,
+//       trim: true,
 //     },
-//   ],
-//   slug: {
-//     type: String,
-//     unique: true,
-//   },
-//   createdAt: {
-//     type: Date,
-//     default: Date.now,
-//   },
-//   updatedAt: {
-//     type: Date,
-//     default: Date.now,
-//   },
-// });
+//     eventType: {
+//       type: String,
+//       required: true,
+//       enum: ["conference", "workshop", "seminar", "webinar", "other"],
+//     },
 
-// const Event = mongoose.model("Event", eventSchema);
+//     Date: {
+//       type: Date,
+//     },
+//     timeZone: {
+//       type: String,
+//     },
+//     location: {
+//       type: String,
+//     },
+//     state: {
+//       type: String,
+//     },
+//     description: {
+//       type: String,
+//     },
+//     price: {
+//       type: Number,
+//       min: 0,
+//     },
+//     capacity: {
+//       type: Number,
+//       min: 0,
+//     },
+//     ticketName: {
+//       type: String,
+//     },
+//     ticketStock: {
+//       type: String,
+//     },
+//     ticketDescription: {
+//       type: String,
+//     },
+//     ticketPurchaseLimit: {
+//       type: Number,
+//       min: 0,
+//     },
+//     organizer: {
+//       type: String,
+//     },
+//     website: {
+//       type: String,
+//     },
+//     tags: [
+//       {
+//         type: String,
+//       },
+//     ],
+//     coverImage: {
+//       type: String,
+//     },
+//     additionalImages: [
+//       {
+//         type: String,
+//       },
+//     ],
+//     createdAt: {
+//       type: Date,
+//       default: Date.now,
+//     },
+//   },
+//   {
+//     timestamps: true, // This adds createdAt and updatedAt fields
+//   }
+// );
 
-// module.exports = Event;
+// module.exports = mongoose.model("Event", eventSchema);
+// models/eventModel.js
+
 const mongoose = require("mongoose");
 
-const eventSchema = new mongoose.Schema({
-  title: {
+const ticketSchema = new mongoose.Schema({
+  ticketId: {
     type: String,
     required: true,
-    trim: true,
   },
-  eventType: {
-    type: String,
-    required: true,
-    enum: ["conference", "workshop", "seminar", "webinar", "other"],
+  isTaken: {
+    type: Boolean,
+    default: false,
   },
-  image: {
-    type: String,
-    default: null,
-  },
-  content: {
-    type: String,
-  },
-  category: {
-    type: String,
-  },
-  date: {
-    type: Date,
-  },
-  venue: {
-    type: String,
-  },
-  organizer: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    default: null,
   },
-  speakers: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Speaker",
-    },
-  ],
-  attendees: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
-  slug: {
-    type: String,
-    unique: true,
-  },
-  createdAt: {
+  purchaseDate: {
     type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
+    default: null,
   },
 });
 
-const Event = mongoose.model("Event", eventSchema);
+const eventSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    eventType: {
+      type: String,
+      required: true,
+      enum: ["conference", "workshop", "seminar", "webinar", "other"],
+    },
+    Date: {
+      type: Date,
+    },
+    timeZone: {
+      type: String,
+    },
+    location: {
+      type: String,
+    },
+    state: {
+      type: String,
+    },
+    description: {
+      type: String,
+    },
+    isPaidEvent: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    price: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    capacity: {
+      type: Number,
+      min: 0,
+    },
+    ticketName: {
+      type: String,
+    },
+    ticketStock: {
+      type: Number, // Changed from String to Number
+      min: 0,
+    },
+    ticketDescription: {
+      type: String,
+    },
+    ticketPurchaseLimit: {
+      type: Number,
+      min: 0,
+    },
+    tickets: [ticketSchema],
+    availableTickets: {
+      type: Number,
+      default: 0,
+    },
+    organizer: {
+      type: String,
+    },
+    website: {
+      type: String,
+    },
+    tags: [
+      {
+        type: String,
+      },
+    ],
+    coverImage: {
+      type: String,
+    },
+    additionalImages: [
+      {
+        type: String,
+      },
+    ],
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
+// Static method to generate unique ticket ID
+eventSchema.statics.generateTicketId = function (eventId, index) {
+  return `${eventId}-${index + 1}`.toUpperCase();
+};
+
+// Instance method to check ticket availability
+eventSchema.methods.checkAvailability = function () {
+  return {
+    totalTickets: this.tickets.length,
+    availableTickets: this.tickets.filter((ticket) => !ticket.isTaken).length,
+    isSoldOut: this.tickets.every((ticket) => ticket.isTaken),
+  };
+};
+
+// Instance method to reserve a ticket
+eventSchema.methods.reserveTicket = async function (userId) {
+  const availableTicket = this.tickets.find((ticket) => !ticket.isTaken);
+
+  if (!availableTicket) {
+    throw new Error("No tickets available");
+  }
+
+  availableTicket.isTaken = true;
+  availableTicket.userId = userId;
+  availableTicket.purchaseDate = new Date();
+  this.availableTickets -= 1;
+
+  await this.save();
+  return availableTicket;
+};
+
+const Event = mongoose.model("Event", eventSchema);
 module.exports = Event;

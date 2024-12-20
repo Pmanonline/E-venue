@@ -5,25 +5,23 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const multer = require("multer");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const connectDB = require("./config/db.config");
 const { errorHandlingMiddleware } = require("./middlewares/errorHandling.js");
 const visitTrackerMiddleware = require("./middlewares/visitsTracker.js");
+const fileUpload = require("express-fileupload");
+const fileUploadConfig = require("./config/cloudinary.js");
 
 // Route imports
+
 const Routes = require("./routes/route.js");
-const fashionRoutes = require("./routes/fashoinRoute.js");
-const VideoRoutes = require("./routes/videoRoutes.js");
-const DigitalEditionRoutes = require("./routes/DigitalEditionRoutes.js");
-const latestRoutes = require("./routes/latestRoutes.js");
-const newRoutes = require("./routes/NewsRoutes.js");
-const commentRoutes = require("./routes/commentRoute.js");
 const UserRoutes = require("./routes/userRoutes.js");
-const PostsRoutes = require("./routes/postRoutes.js");
-const authorRoutes = require("./routes/authorRoutes.js");
-const visitRoutes = require("./routes/IPvisitsRoutes.js");
+const VenueRoutes = require("./routes/venueRoutes.js");
+const EventRoutes = require("./routes/eventRoutes.js");
+const BusinessRoutes = require("./routes/businessRoute.js");
+const MessageRoutes = require("./routes/messageRoute.js");
+const ReviewRoutes = require("./routes/reviewRoute.js");
 
 const app = express();
 
@@ -33,14 +31,14 @@ dotenv.config();
 // Connect to database
 connectDB();
 
-// Add the middleware before your routes
-app.use(visitTrackerMiddleware);
+// app.use(visitTrackerMiddleware);
 
 // CORS Configuration
 const corsOptions = {
   origin: "*", // Allow all origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  // exposedHeaders: ["Content-Range", "X-Content-Range"],
   credentials: false, // Explicitly set to false
 };
 app.use(morgan("dev"));
@@ -74,16 +72,15 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // 5. Routes
 app.use("/api", Routes);
-app.use("/api", fashionRoutes);
-app.use("/api", VideoRoutes);
-app.use("/api", DigitalEditionRoutes);
-app.use("/api", latestRoutes);
-app.use("/api", newRoutes);
-app.use("/api", commentRoutes);
+
 app.use("/api", UserRoutes);
-app.use("/api", PostsRoutes);
-app.use("/api", authorRoutes);
-app.use("/api/visits", visitRoutes);
+app.use("/api", VenueRoutes);
+app.use("/api", EventRoutes);
+app.use("/api", BusinessRoutes);
+app.use("/api", MessageRoutes);
+app.use("/api", ReviewRoutes);
+// app.use("/api", PostsRoutes);
+// app.use("/api/visits", visitRoutes);
 
 // Test route
 app.get("/", (req, res) => {
@@ -97,7 +94,7 @@ app.use(errorHandlingMiddleware);
 const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "production"}`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
 // Handle unhandled promise rejections

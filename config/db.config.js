@@ -5,13 +5,10 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(
-      "mongodb+srv://firstCRUD:w3schools.com@crud.zgveazn.mongodb.net/Autograph1",
-      {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      }
-    );
+    await mongoose.connect("mongodb://127.0.0.1:27017/Evenue", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log("MongoDB connected");
   } catch (error) {
     console.error("MongoDB connection error:", error);
