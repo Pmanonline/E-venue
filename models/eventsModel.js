@@ -1,86 +1,3 @@
-// const mongoose = require("mongoose");
-
-// const eventSchema = new mongoose.Schema(
-//   {
-//     title: {
-//       type: String,
-//       required: true,
-//       trim: true,
-//     },
-//     eventType: {
-//       type: String,
-//       required: true,
-//       enum: ["conference", "workshop", "seminar", "webinar", "other"],
-//     },
-
-//     Date: {
-//       type: Date,
-//     },
-//     timeZone: {
-//       type: String,
-//     },
-//     location: {
-//       type: String,
-//     },
-//     state: {
-//       type: String,
-//     },
-//     description: {
-//       type: String,
-//     },
-//     price: {
-//       type: Number,
-//       min: 0,
-//     },
-//     capacity: {
-//       type: Number,
-//       min: 0,
-//     },
-//     ticketName: {
-//       type: String,
-//     },
-//     ticketStock: {
-//       type: String,
-//     },
-//     ticketDescription: {
-//       type: String,
-//     },
-//     ticketPurchaseLimit: {
-//       type: Number,
-//       min: 0,
-//     },
-//     organizer: {
-//       type: String,
-//     },
-//     website: {
-//       type: String,
-//     },
-//     tags: [
-//       {
-//         type: String,
-//       },
-//     ],
-//     coverImage: {
-//       type: String,
-//     },
-//     additionalImages: [
-//       {
-//         type: String,
-//       },
-//     ],
-//     createdAt: {
-//       type: Date,
-//       default: Date.now,
-//     },
-//   },
-//   {
-//     timestamps: true, // This adds createdAt and updatedAt fields
-//   }
-// );
-
-// module.exports = mongoose.model("Event", eventSchema);
-// models/eventModel.js
-
 const mongoose = require("mongoose");
 
 const ticketSchema = new mongoose.Schema({
@@ -105,6 +22,11 @@ const ticketSchema = new mongoose.Schema({
 
 const eventSchema = new mongoose.Schema(
   {
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     title: {
       type: String,
       required: true,

@@ -1,9 +1,11 @@
 const Businesz = require("../models/businessModel");
-// const NotificationService = require("../services/notificationService");
+const VerificationRequest = require("../models/verificationRequestModel");
+const PaymentNotification = require("../models/paymentNotificationModdel");
 const asyncHandler = require("express-async-handler");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -130,10 +132,14 @@ const deleteFromCloudinary = async (url) => {
 //       console.log("Additional images uploaded:", additionalImageUrls);
 //     }
 
+//     // Extract user ID from the request (assuming it's stored in req.user after authentication)
+//     const userId = req.user._id; // Adjust this based on your authentication middleware
+//     console.log("console.log(userId)", userId);
 //     const business = new Businesz({
 //       ...businessData,
 //       coverImage: coverImageUrl,
 //       additionalImages: additionalImageUrls,
+//       createdBy: userId, // Include the createdBy field
 //     });
 
 //     await business.save();
@@ -155,10 +161,10 @@ const createBusiness = async (req, res) => {
     console.log("Files:", req.files);
 
     // Validate request
-    if (!req.body) {
+    if (!req.body?.businessData) {
       return res.status(400).json({
-        message: "No request body received",
-        details: "Request body is empty or malformed",
+        message: "No business data received",
+        details: "businessData is required in the request body",
       });
     }
 
@@ -168,25 +174,32 @@ const createBusiness = async (req, res) => {
     } catch (error) {
       console.error("Error parsing businessData:", error, {
         receivedData: req.body.businessData,
-        error: error.message,
       });
       return res.status(400).json({ message: "Invalid businessData format" });
     }
 
-    // Initialize coverImageUrl as null
-    let coverImageUrl = null;
+    // Extract user ID from the authenticated request
+    const userId = req.user._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
 
-    // Upload cover image if provided
-    if (req.files && req.files.coverImage) {
-      coverImageUrl = await uploadToCloudinary(req.files.coverImage);
-      console.log("Cover image uploaded:", coverImageUrl);
+    // Handle image uploads
+    let coverImageUrl = null;
+    if (req.files?.coverImage) {
+      try {
+        coverImageUrl = await uploadToCloudinary(req.files.coverImage);
+        console.log("Cover image uploaded:", coverImageUrl);
+      } catch (error) {
+        console.error("Error uploading cover image:", error);
+        return res.status(500).json({ message: "Cover image upload failed" });
+      }
     } else {
       console.log("No cover image provided, proceeding without it.");
     }
 
-    // Upload additional images if any
     let additionalImageUrls = [];
-    if (req.files && req.files.additionalImages) {
+    if (req.files?.additionalImages) {
       const additionalImages = Array.isArray(req.files.additionalImages)
         ? req.files.additionalImages
         : [req.files.additionalImages];
@@ -197,32 +210,34 @@ const createBusiness = async (req, res) => {
           additionalImageUrls.push(url);
         } catch (error) {
           console.error("Error uploading additional image:", error);
-          // Continue with other images even if one fails
         }
       }
       console.log("Additional images uploaded:", additionalImageUrls);
     }
 
-    // Extract user ID from the request (assuming it's stored in req.user after authentication)
-    const userId = req.user._id; // Adjust this based on your authentication middleware
-    console.log("console.log(userId)", userId);
+    // Create business instance
     const business = new Businesz({
       ...businessData,
+
       coverImage: coverImageUrl,
       additionalImages: additionalImageUrls,
-      createdBy: userId, // Include the createdBy field
+      createdBy: userId, // Include the user ID
+      ownerId: userId,
     });
 
     await business.save();
+    console.log("Business created successfully:", business);
     res.status(201).json(business);
   } catch (error) {
     console.error("Error in createBusiness:", error);
     res.status(500).json({
-      message: error.message,
+      message: "An error occurred while creating the business",
+      error: error.message,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
+
 const getAllBusinesses = asyncHandler(async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -243,7 +258,7 @@ const getAllBusinesses = asyncHandler(async (req, res) => {
 
     const businesses = await Businesz.find(query)
       .select(
-        "name type email phoneNumber verificationStatus blacklistStatus address yearsOfExperience bio coverImage additionalImages openingHours verified blacklisted createdAt"
+        "name type email phoneNumber verificationStatus blacklistStatus address yearsOfExperience bio coverImage additionalImages openingHours verified blacklisted createdAt ownerId"
       ) // Include additional fields here
       .sort({ createdAt: -1 })
       .skip(skipIndex)
@@ -412,9 +427,8 @@ const removeBusinessImage = async (req, res) => {
 const verifyBusiness = async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { reason } = req.body;
+    const { reason, verificationId } = req.body;
 
-    // Check if business exists
     const business = await Businesz.findById(businessId);
     if (!business) {
       return res.status(404).json({
@@ -423,23 +437,77 @@ const verifyBusiness = async (req, res) => {
       });
     }
 
-    // Toggle verification status
-    business.verified = !business.verified;
-    business.verificationDetails = {
-      verifiedAt: new Date(),
-      reason:
-        reason ||
-        (business.verified ? "Business verified" : "Verification removed"),
-    };
+    try {
+      // Update business verification status
+      business.verified = !business.verified;
+      business.verificationDetails = {
+        verifiedAt: new Date(),
+        reason:
+          reason ||
+          (business.verified ? "Business verified" : "Verification removed"),
+      };
+      await business.save();
 
-    await business.save();
-    return res.status(200).json({
-      success: true,
-      message: business.verified
-        ? "Business verified successfully"
-        : "Business verification removed",
-      business: business,
-    });
+      // If verificationId is provided, update the verification request status
+      if (verificationId) {
+        await VerificationRequest.findByIdAndUpdate(
+          verificationId,
+          {
+            status: business.verified ? "approved" : "rejected",
+          },
+          { new: true }
+        );
+      } else {
+        // If no verificationId provided, try to find and update the latest verification request
+        const verificationRequest = await VerificationRequest.findOne(
+          { businessId: businessId },
+          {},
+          { sort: { createdAt: -1 } }
+        );
+
+        if (verificationRequest) {
+          verificationRequest.status = business.verified
+            ? "approved"
+            : "rejected";
+          await verificationRequest.save();
+        }
+      }
+
+      // Create notification for business owner
+      const notification = new PaymentNotification({
+        userId: business.createdBy,
+        type: "VERIFICATION_STATUS",
+        title: business.verified
+          ? "Business Verification Approved"
+          : "Business Verification Rejected",
+        message: business.verified
+          ? `Your business ${business.name} has been successfully verified.`
+          : `Your business ${business.name} verification has been rejected.`,
+        recipients: [business.createdBy.toString()],
+        relatedData: {
+          businessId: business._id,
+          status: business.verified ? "approved" : "rejected",
+          reason: reason,
+        },
+      });
+
+      await notification.save();
+
+      return res.status(200).json({
+        success: true,
+        message: business.verified
+          ? "Business verified successfully"
+          : "Business verification removed",
+        business: business,
+      });
+    } catch (error) {
+      // If any operation fails, attempt to revert business verification status
+      if (business) {
+        business.verified = !business.verified;
+        await business.save().catch(console.error);
+      }
+      throw error;
+    }
   } catch (error) {
     console.error("Verify business error:", error);
     return res.status(500).json({
@@ -472,25 +540,55 @@ const blacklistBusiness = async (req, res) => {
       });
     }
 
-    // Convert duration from days to milliseconds if provided
-    const durationMs = duration ? duration * 24 * 60 * 60 * 1000 : null;
+    try {
+      // Convert duration from days to milliseconds if provided
+      const durationMs = duration ? duration * 24 * 60 * 60 * 1000 : null;
 
-    // Toggle blacklist status
-    business.blacklisted = !business.blacklisted;
-    business.blacklistDetails = {
-      blacklistedAt: new Date(),
-      reason: reason,
-      duration: durationMs ? new Date(Date.now() + durationMs) : null,
-    };
+      // Update blacklist status
+      business.blacklisted = !business.blacklisted;
+      business.blacklistDetails = {
+        blacklistedAt: new Date(),
+        reason: reason,
+        duration: durationMs ? new Date(Date.now() + durationMs) : null,
+      };
+      await business.save();
 
-    await business.save();
-    return res.status(200).json({
-      success: true,
-      message: business.blacklisted
-        ? "Business blacklisted successfully"
-        : "Business removed from blacklist",
-      business: business,
-    });
+      // Create notification for blacklist status
+      const notification = new PaymentNotification({
+        userId: business.createdBy,
+        type: "BLACKLIST_STATUS",
+        title: business.blacklisted
+          ? "Business Blacklisted"
+          : "Business Removed from Blacklist",
+        message: business.blacklisted
+          ? `Your business ${business.name} has been blacklisted. Reason: ${reason}`
+          : `Your business ${business.name} has been removed from the blacklist.`,
+        recipients: [business.createdBy],
+        relatedData: {
+          businessId: business._id,
+          status: business.blacklisted ? "blacklisted" : "removed",
+          reason: reason,
+          duration: durationMs ? new Date(Date.now() + durationMs) : null,
+        },
+      });
+
+      await notification.save();
+
+      return res.status(200).json({
+        success: true,
+        message: business.blacklisted
+          ? "Business blacklisted successfully"
+          : "Business removed from blacklist",
+        business: business,
+      });
+    } catch (error) {
+      // If any operation fails, attempt to revert blacklist status
+      if (business) {
+        business.blacklisted = !business.blacklisted;
+        await business.save().catch(console.error);
+      }
+      throw error;
+    }
   } catch (error) {
     console.error("Blacklist business error:", error);
     return res.status(500).json({

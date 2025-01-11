@@ -9,11 +9,12 @@ const {
   updateEvent,
   deleteEvent,
 } = require("../controllers/eventsController");
+const authmiddleware = require("../config/authMiddleware");
 
 // Configure express-fileupload middleware
 
 // Event routes
-router.post("/createEvent", createEvent);
+router.post("/createEvent", authmiddleware, createEvent);
 router.get("/tickets/:eventId", checkTicketAvailability);
 router.post("/reserve/:eventId", reserveTicket);
 router.get("/getAllEvents", getAllEvents);

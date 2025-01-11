@@ -1,4 +1,3 @@
-// messageModel.js
 const mongoose = require("mongoose");
 
 const MessageSchema = new mongoose.Schema(
@@ -47,5 +46,10 @@ const MessageSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Add indexes for better query performance
+MessageSchema.index({ senderId: 1, receiverId: 1 });
+MessageSchema.index({ isRead: 1 });
+MessageSchema.index({ timestamp: -1 });
 
 module.exports = mongoose.model("Message", MessageSchema);

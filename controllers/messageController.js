@@ -390,6 +390,32 @@ const createOrGetConversation = async (req, res) => {
   }
 };
 
+// Add to messageController.js:
+const markMessageAsDelivered = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    await Message.findByIdAndUpdate(messageId, {
+      deliveryStatus: "delivered",
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating message status" });
+  }
+};
+
+const updateTypingStatus = async (req, res) => {
+  try {
+    const { userId, receiverId, isTyping } = req.body;
+    // Emit through socket
+    io.to(receiverId).emit(
+      isTyping ? "typing_started" : "typing_stopped",
+      userId
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating typing status" });
+  }
+};
 module.exports = {
   getMessages,
   sendMessage,
@@ -398,4 +424,6 @@ module.exports = {
   getConversations,
   getConversationBetweenUsers,
   createOrGetConversation,
+  markMessageAsDelivered,
+  updateTypingStatus,
 };

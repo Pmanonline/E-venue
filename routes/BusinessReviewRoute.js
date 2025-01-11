@@ -7,7 +7,7 @@ const {
   updateReview,
   deleteReview,
   toggleLikeReview,
-} = require("../controllers/reviewController");
+} = require("../controllers/BusinessReviewController");
 
 router.post("/reviews", createReview);
 router.get("/getBusinessReviews/:businessId", getBusinessReviews);

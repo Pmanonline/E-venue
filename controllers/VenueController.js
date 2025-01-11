@@ -143,15 +143,7 @@ const createVenue = async (req, res) => {
     });
   }
 };
-// Get all venues
-// const getAllVenues = async (req, res) => {
-//   try {
-//     const venues = await Venue.find();
-//     res.status(200).json(venues);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+
 const getAllVenues = async (req, res) => {
   try {
     const { searchTerm, location, category, state } = req.query; // Add state to the destructured query
