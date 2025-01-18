@@ -50,6 +50,8 @@ const notificationSchema = new mongoose.Schema({
       "PAYMENT_REFUNDED",
       //  business blacklist types
       "BLACKLIST_STATUS",
+      // venueInterest
+      "VENUE_INTEREST",
     ],
     required: true,
   },

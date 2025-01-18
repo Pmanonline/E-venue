@@ -150,6 +150,8 @@ const paymentRoutes = require("./routes/paymentRoute.js");
 const ticketPaymentRoute = require("./routes/ticketPaymentRoute.js");
 const notificationRoutes = require("./routes/notificationRoute.js");
 const verifcationRoutes = require("./routes/verifcationRoute.js");
+const venueVerificatioRoute = require("./routes/venueVerificatioRoute.js");
+const venueInterestRoute = require("./routes/venueInterestRoute.js");
 
 // Load env vars
 dotenv.config();
@@ -229,6 +231,8 @@ app.use("/api", paymentRoutes);
 app.use("/api", ticketPaymentRoute);
 app.use("/api", notificationRoutes);
 app.use("/api", verifcationRoutes);
+app.use("/api", venueVerificatioRoute);
+app.use("/api", venueInterestRoute);
 
 // Test route
 app.get("/", (req, res) => {

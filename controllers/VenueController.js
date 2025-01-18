@@ -1,6 +1,9 @@
 const Venue = require("../models/venueModel");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
+const VerificationRequest = require("../models/verificationRequestModel");
+const PaymentNotification = require("../models/paymentNotificationModdel");
+const mongoose = require("mongoose");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -71,6 +74,97 @@ const deleteFromCloudinary = async (url) => {
   }
 };
 
+// const createVenue = async (req, res) => {
+//   try {
+//     console.log("Incoming request details:");
+//     console.log("Headers:", req.headers);
+//     console.log("Body:", req.body);
+//     console.log("Files:", req.files);
+
+//     // Validate request
+//     if (!req.body) {
+//       return res.status(400).json({
+//         message: "No request body received",
+//         details: "Request body is empty or malformed",
+//       });
+//     }
+
+//     let venueData;
+//     try {
+//       venueData = JSON.parse(req.body.venueData);
+//     } catch (error) {
+//       console.error("Error parsing venueData:", error, {
+//         receivedData: req.body.venueData,
+//         error: error.message,
+//       });
+//       return res.status(400).json({ message: "Invalid venueData format" });
+//     }
+
+//     // Extract user ID from the authenticated request
+//     const userId = req.user._id;
+//     if (!userId) {
+//       return res.status(401).json({ message: "Authentication required" });
+//     }
+
+//     // Initialize coverImageUrl as null
+//     let coverImageUrl = null;
+
+//     // Upload cover image if provided
+//     if (req.files && req.files.coverImage) {
+//       try {
+//         coverImageUrl = await uploadToCloudinary(req.files.coverImage);
+//         console.log("Cover image uploaded:", coverImageUrl);
+//       } catch (error) {
+//         console.error("Error uploading cover image:", error);
+//         return res.status(500).json({ message: "Cover image upload failed" });
+//       }
+//     } else {
+//       console.log("No cover image provided, proceeding without it.");
+//     }
+
+//     // Upload additional images if any
+//     let additionalImageUrls = [];
+//     if (req.files && req.files.additionalImages) {
+//       const additionalImages = Array.isArray(req.files.additionalImages)
+//         ? req.files.additionalImages
+//         : [req.files.additionalImages];
+
+//       for (const image of additionalImages) {
+//         try {
+//           const url = await uploadToCloudinary(image);
+//           additionalImageUrls.push(url);
+//         } catch (error) {
+//           console.error("Error uploading additional image:", error);
+//           // Continue with other images even if one fails
+//         }
+//       }
+//       console.log("Additional images uploaded:", additionalImageUrls);
+//     }
+
+//     // Create venue instance with createdBy and ownerId
+//     const venue = new Venue({
+//       ...venueData,
+//       coverImage: coverImageUrl, // This can be null if no image was uploaded
+//       additionalImages: additionalImageUrls,
+//       createdBy: userId, // Include the user ID
+//       ownerId: userId, // Include the user ID as owner
+//     });
+
+//     await venue.save();
+//     console.log("Venue created successfully:", venue);
+//     res.status(201).json(venue);
+//   } catch (error) {
+//     console.error("Error in createVenue:", error);
+//     res.status(500).json({
+//       message: "An error occurred while creating the venue",
+//       error: error.message,
+//       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+//     });
+//   }
+// };
+
+// Modified createVenue controller function
+
 const createVenue = async (req, res) => {
   try {
     console.log("Incoming request details:");
@@ -97,20 +191,51 @@ const createVenue = async (req, res) => {
       return res.status(400).json({ message: "Invalid venueData format" });
     }
 
-    // Initialize coverImageUrl as null
-    let coverImageUrl = null;
+    // Validate required fields
+    const requiredFields = ["title", "businessEmail", "capacity", "type"];
 
-    // Upload cover image if provided
-    if (req.files && req.files.coverImage) {
-      coverImageUrl = await uploadToCloudinary(req.files.coverImage);
-      console.log("Cover image uploaded:", coverImageUrl);
-    } else {
-      console.log("No cover image provided, proceeding without it.");
+    const missingFields = requiredFields.filter((field) => {
+      const value = field
+        .split(".")
+        .reduce((obj, key) => obj?.[key], venueData);
+      return !value;
+    });
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: "Missing required fields",
+        fields: missingFields,
+      });
     }
 
-    // Upload additional images if any
+    // Validate business phone numbers
+    if (venueData.businessPhoneNumbers?.length > 2) {
+      return res.status(400).json({
+        message: "Maximum of 2 phone numbers allowed",
+      });
+    }
+
+    // Extract user ID from the authenticated request
+    const userId = req.user._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Handle image uploads
+    let coverImageUrl = null;
     let additionalImageUrls = [];
-    if (req.files && req.files.additionalImages) {
+
+    if (req.files?.coverImage) {
+      try {
+        coverImageUrl = await uploadToCloudinary(req.files.coverImage);
+        console.log("Cover image uploaded:", coverImageUrl);
+      } catch (error) {
+        console.error("Error uploading cover image:", error);
+        return res.status(500).json({ message: "Cover image upload failed" });
+      }
+    }
+
+    if (req.files?.additionalImages) {
       const additionalImages = Array.isArray(req.files.additionalImages)
         ? req.files.additionalImages
         : [req.files.additionalImages];
@@ -121,56 +246,196 @@ const createVenue = async (req, res) => {
           additionalImageUrls.push(url);
         } catch (error) {
           console.error("Error uploading additional image:", error);
-          // Continue with other images even if one fails
         }
       }
       console.log("Additional images uploaded:", additionalImageUrls);
     }
 
+    // Create venue instance
     const venue = new Venue({
       ...venueData,
-      coverImage: coverImageUrl, // This can be null if no image was uploaded
+      coverImage: coverImageUrl,
       additionalImages: additionalImageUrls,
+      createdBy: userId,
+      ownerId: userId,
     });
 
     await venue.save();
+    console.log("Venue created successfully:", venue);
+
     res.status(201).json(venue);
   } catch (error) {
     console.error("Error in createVenue:", error);
     res.status(500).json({
-      message: error.message,
+      message: "An error occurred while creating the venue",
+      error: error.message,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
 
+// const getAllVenues = async (req, res) => {
+//   try {
+//     const {
+//       page = 1,
+//       limit = 9,
+//       searchTerm,
+//       location,
+//       category,
+//       state,
+//     } = req.query;
+
+//     // Build filter object
+//     let filter = {};
+//     if (searchTerm) {
+//       filter.title = { $regex: searchTerm, $options: "i" };
+//     }
+//     if (location) {
+//       filter.location = location;
+//     }
+//     if (category) {
+//       filter.category = category;
+//     }
+//     if (state) {
+//       filter["address.state"] = state;
+//     }
+
+//     // Get total count for pagination
+//     const totalVenues = await Venue.countDocuments(filter);
+//     const totalPages = Math.ceil(totalVenues / limit);
+
+//     // Get paginated results
+//     const venues = await Venue.find(filter)
+//       .sort({ createdAt: -1 })
+//       .limit(limit * 1)
+//       .skip((page - 1) * limit)
+//       .exec();
+
+//     res.status(200).json({
+//       venues,
+//       totalPages,
+//       currentPage: page,
+//       totalVenues,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 const getAllVenues = async (req, res) => {
   try {
-    const { searchTerm, location, category, state } = req.query; // Add state to the destructured query
-    let venues = await Venue.find();
+    const {
+      page = 1,
+      limit = 9,
+      searchTerm,
+      location,
+      category,
+      state,
+      venueId,
+      ownerId,
+      type,
+      capacity,
+      priceMin,
+      priceMax,
+    } = req.query;
 
+    // Build filter object
+    let filter = {};
+
+    // ID-based filters
+    if (venueId) {
+      // Ensure valid ObjectId
+      if (mongoose.Types.ObjectId.isValid(venueId)) {
+        filter._id = mongoose.Types.ObjectId(venueId);
+      } else {
+        return res.status(400).json({ message: "Invalid venue ID format" });
+      }
+    }
+
+    if (ownerId) {
+      // Ensure valid ObjectId
+      if (mongoose.Types.ObjectId.isValid(ownerId)) {
+        filter.ownerId = mongoose.Types.ObjectId(ownerId);
+      } else {
+        return res.status(400).json({ message: "Invalid owner ID format" });
+      }
+    }
+
+    // Text-based filters
     if (searchTerm) {
-      venues = venues.filter((venue) =>
-        venue.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filter.$or = [
+        { title: { $regex: searchTerm, $options: "i" } },
+        { "address.area": { $regex: searchTerm, $options: "i" } },
+        { "address.street": { $regex: searchTerm, $options: "i" } },
+      ];
     }
 
-    if (location) {
-      venues = venues.filter((venue) => venue.location === location);
-    }
-
-    if (category) {
-      venues = venues.filter((venue) => venue.category === category);
-    }
-
+    // Location-based filters
     if (state) {
-      // Add filtering by state
-      venues = venues.filter((venue) => venue.address.state === state);
+      filter["address.state"] = state;
+    }
+    if (location) {
+      filter["address.lga"] = location;
     }
 
-    res.status(200).json(venues);
+    // Type and capacity filters
+    if (type) {
+      filter.type = type;
+    }
+    if (capacity) {
+      filter.capacity = capacity;
+    }
+
+    // Price range filter
+    if (priceMin || priceMax) {
+      filter["pricingDetails.totalPayment"] = {};
+      if (priceMin)
+        filter["pricingDetails.totalPayment"].$gte = Number(priceMin);
+      if (priceMax)
+        filter["pricingDetails.totalPayment"].$lte = Number(priceMax);
+    }
+
+    // Add filter for non-blacklisted venues by default
+    filter.blacklisted = { $ne: true };
+
+    // Get total count for pagination
+    const totalVenues = await Venue.countDocuments(filter);
+    const totalPages = Math.ceil(totalVenues / limit);
+
+    // Get paginated results with specified fields
+    const venues = await Venue.find(filter)
+      .select({
+        title: 1,
+        businessEmail: 1,
+        businessPhoneNumbers: 1,
+        capacity: 1,
+        amenities: 1,
+        type: 1,
+        pricingDetails: 1,
+        address: 1,
+        coverImage: 1,
+        additionalImages: 1,
+        createdAt: 1,
+        verified: 1,
+        ownerId: 1,
+      })
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .exec();
+
+    res.status(200).json({
+      venues,
+      totalPages,
+      currentPage: Number(page),
+      totalVenues,
+      filter: filter, // Include filter in response for debugging
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error in getAllVenues:", error);
+    res.status(500).json({
+      message: "Error fetching venues",
+      error: error.message,
+    });
   }
 };
 
@@ -338,6 +603,182 @@ const removeVenueImage = async (req, res) => {
   }
 };
 
+const verifyVenue = async (req, res) => {
+  try {
+    const { venueId } = req.params;
+    const { reason, verificationId } = req.body;
+
+    const venue = await Venue.findById(venueId);
+    if (!venue) {
+      return res.status(404).json({
+        success: false,
+        message: "Venue not found",
+      });
+    }
+
+    try {
+      // Update venue verification status
+      venue.verified = !venue.verified;
+      venue.verificationDetails = {
+        verifiedAt: new Date(),
+        reason:
+          reason ||
+          (venue.verified ? "Venue verified" : "Verification removed"),
+      };
+      await venue.save();
+
+      // Update verification request status
+      let verificationRequest;
+      if (verificationId) {
+        verificationRequest = await VerificationRequest.findById(
+          verificationId
+        );
+      } else {
+        // Find the latest verification request
+        verificationRequest = await VerificationRequest.findOne(
+          { venueId: venueId },
+          null,
+          { sort: { createdAt: -1 } }
+        );
+      }
+
+      if (verificationRequest) {
+        verificationRequest.status = venue.verified ? "approved" : "rejected";
+        if (!venue.verified && reason) {
+          verificationRequest.rejectionReason = reason;
+        }
+        verificationRequest.updatedAt = new Date();
+        await verificationRequest.save();
+      }
+
+      // Create notification
+      const notification = new PaymentNotification({
+        userId: venue.createdBy,
+        type: "VERIFICATION_STATUS",
+        title: venue.verified
+          ? "Venue Verification Approved"
+          : "Venue Verification Rejected",
+        message: venue.verified
+          ? `Your venue ${venue.title} has been successfully verified.`
+          : `Your venue ${venue.title} verification has been rejected.`,
+        recipients: [venue.createdBy.toString()],
+        relatedData: {
+          venueId: venue._id,
+          status: venue.verified ? "approved" : "rejected",
+          reason: reason,
+        },
+      });
+
+      await notification.save();
+
+      return res.status(200).json({
+        success: true,
+        message: venue.verified
+          ? "Venue verified successfully"
+          : "Venue verification removed",
+        venue: venue,
+      });
+    } catch (error) {
+      // If any operation fails, attempt to revert venue verification status
+      if (venue) {
+        venue.verified = !venue.verified;
+        if (venue.verificationDetails) {
+          delete venue.verificationDetails;
+        }
+        await venue.save().catch(console.error);
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error("Verify venue error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update venue verification status",
+      error: error.message,
+    });
+  }
+};
+const blacklistVenue = async (req, res) => {
+  try {
+    const { venueId } = req.params;
+    const { reason, duration } = req.body;
+
+    // Validate input
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Reason is required for blacklisting",
+      });
+    }
+
+    // Find the venue
+    const venue = await Venue.findById(venueId);
+    if (!venue) {
+      return res.status(404).json({
+        success: false,
+        message: "Venue not found",
+      });
+    }
+
+    try {
+      // Convert duration from days to milliseconds if provided
+      const durationMs = duration ? duration * 24 * 60 * 60 * 1000 : null;
+
+      // Update blacklist status
+      venue.blacklisted = !venue.blacklisted;
+      venue.blacklistDetails = {
+        blacklistedAt: new Date(),
+        reason: reason,
+        duration: durationMs ? new Date(Date.now() + durationMs) : null,
+      };
+      await venue.save();
+
+      // Create notification for blacklist status
+      const notification = new PaymentNotification({
+        userId: venue.createdBy,
+        type: "BLACKLIST_STATUS",
+        title: venue.blacklisted
+          ? "Venue Blacklisted"
+          : "Venue Removed from Blacklist",
+        message: venue.blacklisted
+          ? `Your venue ${venue.title} has been blacklisted. Reason: ${reason}`
+          : `Your venue ${venue.title} has been removed from the blacklist.`,
+        recipients: [venue.createdBy],
+        relatedData: {
+          venueId: venue._id,
+          status: venue.blacklisted ? "blacklisted" : "removed",
+          reason: reason,
+          duration: durationMs ? new Date(Date.now() + durationMs) : null,
+        },
+      });
+
+      await notification.save();
+
+      return res.status(200).json({
+        success: true,
+        message: venue.blacklisted
+          ? "Venue blacklisted successfully"
+          : "Venue removed from blacklist",
+        venue: venue,
+      });
+    } catch (error) {
+      // If any operation fails, attempt to revert blacklist status
+      if (venue) {
+        venue.blacklisted = !venue.blacklisted;
+        await venue.save().catch(console.error);
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error("Blacklist venue error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update venue blacklist status",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createVenue,
   getAllVenues,
@@ -345,4 +786,6 @@ module.exports = {
   updateVenue,
   deleteVenue,
   removeVenueImage,
+  verifyVenue,
+  blacklistVenue,
 };

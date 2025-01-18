@@ -125,6 +125,97 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
+// const getConversations = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     // Validate userId format
+//     if (!mongoose.Types.ObjectId.isValid(userId)) {
+//       return res.status(400).json({ message: "Invalid user ID format" });
+//     }
+
+//     // Convert userId to ObjectId correctly
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     // Find all messages where user is either sender or receiver
+//     const conversations = await Message.aggregate([
+//       {
+//         $match: {
+//           $or: [{ senderId: userObjectId }, { receiverId: userObjectId }],
+//           isDeleted: false,
+//         },
+//       },
+//       {
+//         $sort: { createdAt: -1 },
+//       },
+//       {
+//         $group: {
+//           _id: {
+//             $cond: {
+//               if: { $eq: ["$senderId", userObjectId] },
+//               then: "$receiverId",
+//               else: "$senderId",
+//             },
+//           },
+//           lastMessage: { $first: "$$ROOT" },
+//           unreadCount: {
+//             $sum: {
+//               $cond: [
+//                 {
+//                   $and: [
+//                     { $eq: ["$receiverId", userObjectId] },
+//                     { $eq: ["$isRead", false] },
+//                   ],
+//                 },
+//                 1,
+//                 0,
+//               ],
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "users",
+//           localField: "_id",
+//           foreignField: "_id",
+//           as: "otherUser",
+//         },
+//       },
+//       {
+//         $unwind: "$otherUser",
+//       },
+//       {
+//         $project: {
+//           otherUser: {
+//             _id: 1,
+//             username: 1,
+//             email: 1,
+//             profilePic: 1,
+//           },
+//           lastMessage: 1,
+//           unreadCount: 1,
+//         },
+//       },
+//     ]);
+
+//     // Check if conversations were found
+//     if (conversations.length === 0) {
+//       return res
+//         .status(200)
+//         .json({ message: "No conversations found", conversations: [] });
+//     }
+
+//     res.json(conversations);
+//   } catch (error) {
+//     console.error("Error fetching conversations:", error);
+//     res.status(500).json({
+//       message: "Error fetching conversations",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const getConversations = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -192,6 +283,7 @@ const getConversations = async (req, res) => {
             username: 1,
             email: 1,
             profilePic: 1,
+            image: 1, // Added image field
           },
           lastMessage: 1,
           unreadCount: 1,
@@ -206,7 +298,16 @@ const getConversations = async (req, res) => {
         .json({ message: "No conversations found", conversations: [] });
     }
 
-    res.json(conversations);
+    // Transform the response to ensure image field is properly set
+    const transformedConversations = conversations.map((conv) => ({
+      ...conv,
+      otherUser: {
+        ...conv.otherUser,
+        image: conv.otherUser.image || conv.otherUser.profilePic, // Fallback to profilePic if image doesn't exist
+      },
+    }));
+
+    res.json(transformedConversations);
   } catch (error) {
     console.error("Error fetching conversations:", error);
     res.status(500).json({
@@ -255,8 +356,8 @@ const getConversationBetweenUsers = async (req, res) => {
       ],
       isDeleted: false,
     })
-      .populate("senderId", "username email profilePic")
-      .populate("receiverId", "username email profilePic")
+      .populate("senderId", "username email image")
+      .populate("receiverId", "username email image")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

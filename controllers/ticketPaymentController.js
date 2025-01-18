@@ -9,23 +9,19 @@ const { sendTicketEmails } = require("../config/ticketMailService");
 
 const initializeTicketPayment = async (req, res) => {
   try {
-    // Log the incoming request body for debugging
     console.log("Request body:", req.body);
 
-    // Extract eventId from either direct body or metadata
     const eventId = req.body.eventId || req.body.metadata?.eventId;
     const quantity = req.body.quantity || req.body.metadata?.quantity;
     const email = req.body.email;
-    const userId = req.user._id; // Assuming you're getting this from auth middleware
+    const userId = req.user._id;
 
-    // Validate required fields
     if (!eventId || !quantity || !email) {
       throw new Error("Missing required fields: eventId, quantity, or email");
     }
 
     console.log("Looking for event with ID:", eventId);
 
-    // Validate event and ticket availability
     const event = await Event.findById(eventId);
     if (!event) {
       console.log("Event not found for ID:", eventId);
@@ -37,11 +33,8 @@ const initializeTicketPayment = async (req, res) => {
       throw new Error("Not enough tickets available");
     }
 
-    // Calculate total amount
-
     const amount = req.body.amount || event.price * quantity * 100;
 
-    // Initialize payment with Paystack
     const paystackResponse = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
@@ -63,12 +56,13 @@ const initializeTicketPayment = async (req, res) => {
       }
     );
 
-    // Create initial notification
+    // Updated notification creation with recipients
     await PaymentNotification.create({
       userId,
       title: "Ticket Payment Initiated",
       message: `Payment initiated for ${quantity} ticket(s) to ${event.title}`,
       type: "info",
+      recipients: [userId.toString()], // Convert ObjectId to string
     });
 
     res.json({
@@ -80,13 +74,13 @@ const initializeTicketPayment = async (req, res) => {
   } catch (error) {
     console.error("Ticket payment initialization error:", error);
 
-    // Create failure notification
     if (req.user?._id) {
       await PaymentNotification.create({
         userId: req.user._id,
         title: "Ticket Payment Initialization Failed",
         message: "Unable to initialize ticket payment. Please try again.",
         type: "error",
+        recipients: [req.user._id.toString()],
       });
     }
 
@@ -102,11 +96,7 @@ const verifyTicketPayment = async (req, res) => {
   const { reference } = req.query;
   console.log("Received reference:", reference);
 
-  // Add a lock key for this reference
-  const lockKey = `payment_verification_${reference}`;
-
   try {
-    // Check if tickets already exist for this reference
     const existingTickets = await Ticket.find({ paymentReference: reference });
     if (existingTickets.length > 0) {
       console.log("Payment already processed, returning existing tickets");
@@ -118,7 +108,6 @@ const verifyTicketPayment = async (req, res) => {
       });
     }
 
-    // Verify with Paystack
     const response = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
@@ -139,7 +128,6 @@ const verifyTicketPayment = async (req, res) => {
       throw new Error("Invalid transaction metadata");
     }
 
-    // Find and update event atomically
     const event = await Event.findOneAndUpdate(
       {
         _id: metadata.eventId,
@@ -153,7 +141,6 @@ const verifyTicketPayment = async (req, res) => {
       throw new Error("Not enough tickets available");
     }
 
-    // Create tickets in bulk to ensure atomicity
     const ticketsToCreate = Array.from({ length: metadata.quantity }, () => ({
       ticketId: `TKT${Math.floor(Math.random() * 1000000)
         .toString()
@@ -169,16 +156,16 @@ const verifyTicketPayment = async (req, res) => {
 
     const reservedTickets = await Ticket.insertMany(ticketsToCreate);
 
-    // Get user details and send emails
     const user = await User.findById(metadata.userId);
     await sendTicketEmails(reservedTickets, event, user);
 
-    // Create single success notification
+    // Updated notification with recipients
     await PaymentNotification.create({
       userId: metadata.userId,
       title: "Ticket Purchase Successful",
       message: `Successfully purchased ${metadata.quantity} ticket(s) for ${event.title}`,
       type: "success",
+      recipients: [metadata.userId.toString(), event.ownerId.toString()], // Notify both user and event owner
     });
 
     return res.json({
@@ -190,13 +177,13 @@ const verifyTicketPayment = async (req, res) => {
   } catch (error) {
     console.error("Ticket payment verification error:", error);
 
-    // Only create one error notification
     if (error.response?.data?.metadata?.userId) {
       await PaymentNotification.create({
         userId: error.response.data.metadata.userId,
         title: "Ticket Purchase Failed",
         message: "Your ticket purchase was not successful. Please try again.",
         type: "error",
+        recipients: [error.response.data.metadata.userId.toString()],
       });
     }
 
@@ -208,6 +195,7 @@ const verifyTicketPayment = async (req, res) => {
     });
   }
 };
+
 const getTicketByReference = async (req, res) => {
   try {
     const { reference } = req.params;

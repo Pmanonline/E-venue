@@ -76,83 +76,6 @@ const deleteFromCloudinary = async (url) => {
   }
 };
 
-// const createBusiness = async (req, res) => {
-//   try {
-//     console.log("Incoming request details:");
-//     console.log("Headers:", req.headers);
-//     console.log("Body:", req.body);
-//     console.log("Files:", req.files);
-
-//     // Validate request
-//     if (!req.body) {
-//       return res.status(400).json({
-//         message: "No request body received",
-//         details: "Request body is empty or malformed",
-//       });
-//     }
-
-//     let businessData;
-//     try {
-//       businessData = JSON.parse(req.body.businessData);
-//     } catch (error) {
-//       console.error("Error parsing businessData:", error, {
-//         receivedData: req.body.businessData,
-//         error: error.message,
-//       });
-//       return res.status(400).json({ message: "Invalid businessData format" });
-//     }
-
-//     // Initialize coverImageUrl as null
-//     let coverImageUrl = null;
-
-//     // Upload cover image if provided
-//     if (req.files && req.files.coverImage) {
-//       coverImageUrl = await uploadToCloudinary(req.files.coverImage);
-//       console.log("Cover image uploaded:", coverImageUrl);
-//     } else {
-//       console.log("No cover image provided, proceeding without it.");
-//     }
-
-//     // Upload additional images if any
-//     let additionalImageUrls = [];
-//     if (req.files && req.files.additionalImages) {
-//       const additionalImages = Array.isArray(req.files.additionalImages)
-//         ? req.files.additionalImages
-//         : [req.files.additionalImages];
-
-//       for (const image of additionalImages) {
-//         try {
-//           const url = await uploadToCloudinary(image);
-//           additionalImageUrls.push(url);
-//         } catch (error) {
-//           console.error("Error uploading additional image:", error);
-//           // Continue with other images even if one fails
-//         }
-//       }
-//       console.log("Additional images uploaded:", additionalImageUrls);
-//     }
-
-//     // Extract user ID from the request (assuming it's stored in req.user after authentication)
-//     const userId = req.user._id; // Adjust this based on your authentication middleware
-//     console.log("console.log(userId)", userId);
-//     const business = new Businesz({
-//       ...businessData,
-//       coverImage: coverImageUrl,
-//       additionalImages: additionalImageUrls,
-//       createdBy: userId, // Include the createdBy field
-//     });
-
-//     await business.save();
-//     res.status(201).json(business);
-//   } catch (error) {
-//     console.error("Error in createBusiness:", error);
-//     res.status(500).json({
-//       message: error.message,
-//       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-//     });
-//   }
-// };
-
 const createBusiness = async (req, res) => {
   try {
     console.log("Incoming request details:");
@@ -258,7 +181,7 @@ const getAllBusinesses = asyncHandler(async (req, res) => {
 
     const businesses = await Businesz.find(query)
       .select(
-        "name type email phoneNumber verificationStatus blacklistStatus address yearsOfExperience bio coverImage additionalImages openingHours verified blacklisted createdAt ownerId"
+        "name type email phoneNumber verificationStatus blacklistStatus address yearsOfExperience bio coverImage additionalImages openingHours verified blacklisted blacklistDetails createdAt ownerId"
       ) // Include additional fields here
       .sort({ createdAt: -1 })
       .skip(skipIndex)

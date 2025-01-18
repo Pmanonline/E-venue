@@ -7,6 +7,7 @@ const dotenv = require("dotenv");
 const validator = require("validator");
 const JWT_SECRET = process.env.JWT_SECRET || "Qwe123123";
 const crypto = require("crypto");
+const { generateToken } = require("../middlewares/tokenUtils");
 
 dotenv.config();
 
@@ -173,6 +174,56 @@ const registerAdmin = async (req, res) => {
   }
 };
 
+// const login = async (req, res) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     const user = await UserModel.findOne({ email });
+//     if (!user || !(await bcrypt.compare(password, user.password))) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const userData = {
+//       _id: user._id,
+//       username: user.username,
+//       email: user.email,
+//       role: user.role,
+//     };
+
+//     if (user.role === "admin") {
+//       try {
+//         const otp = generateOTP();
+//         user.otp = otp;
+//         user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+//         await user.save();
+
+//         await sendOTPEmail(email, otp);
+
+//         return res.status(200).json({
+//           message: "OTP sent to your email",
+//           requireOTP: true,
+//           user: userData,
+//         });
+//       } catch (error) {
+//         console.error("OTP generation/sending error:", error);
+//         return res.status(500).json({ message: "Failed to send OTP" });
+//       }
+//     }
+
+//     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+//       expiresIn: "30d",
+//     });
+
+//     return res.status(200).json({
+//       token,
+//       user: userData,
+//     });
+//   } catch (error) {
+//     console.error("Login Error:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -209,9 +260,7 @@ const login = async (req, res) => {
       }
     }
 
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "30d",
-    });
+    const token = generateToken(user._id);
 
     return res.status(200).json({
       token,
@@ -223,6 +272,75 @@ const login = async (req, res) => {
   }
 };
 
+// const verifyAdminOTP = async (req, res) => {
+//   const { userId, email, otp } = req.body;
+
+//   if (!otp) {
+//     return res.status(400).json({ message: "OTP is required" });
+//   }
+
+//   try {
+//     let query = {
+//       role: "admin",
+//       otp,
+//       otpExpiresAt: { $gt: Date.now() },
+//     };
+
+//     if (userId) {
+//       query._id = userId;
+//     } else if (email) {
+//       query.email = email;
+//     } else {
+//       return res
+//         .status(400)
+//         .json({ message: "Either userId or email is required" });
+//     }
+
+//     const user = await UserModel.findOne(query);
+
+//     if (!user) {
+//       return res.status(401).json({
+//         message: "Invalid or expired OTP",
+//       });
+//     }
+
+//     if (user.otp !== otp) {
+//       return res.status(401).json({
+//         message: "Invalid OTP",
+//       });
+//     }
+
+//     // Generate new token
+//     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+//       expiresIn: "30d",
+//     });
+
+//     // Clear OTP after successful verification
+//     user.otp = undefined;
+//     user.otpExpiresAt = undefined;
+//     await user.save();
+
+//     // Return consistent response structure
+//     return res.status(200).json({
+//       success: true,
+//       token,
+//       user: {
+//         _id: user._id,
+//         email: user.email,
+//         username: user.username,
+//         role: user.role,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error during OTP verification:", error);
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       details: error.message,
+//     });
+//   }
+// };
+
+// Update verifyAdminOTP function
 const verifyAdminOTP = async (req, res) => {
   const { userId, email, otp } = req.body;
 
@@ -261,17 +379,13 @@ const verifyAdminOTP = async (req, res) => {
       });
     }
 
-    // Generate new token
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "30d",
-    });
+    const token = generateToken(user._id);
 
     // Clear OTP after successful verification
     user.otp = undefined;
     user.otpExpiresAt = undefined;
     await user.save();
 
-    // Return consistent response structure
     return res.status(200).json({
       success: true,
       token,

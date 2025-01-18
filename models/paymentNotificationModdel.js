@@ -44,6 +44,12 @@ const notificationSchema = new mongoose.Schema({
       "VERIFICATION_APPROVED",
       "VERIFICATION_REJECTED",
       "VERIFICATION_DELETED",
+      // Business verification types
+      "VENUE_VERIFICATION_REQUEST",
+      "VENUE_VERIFICATION_STATUS",
+      "VENUE_VERIFICATION_APPROVED",
+      "VENUE_VERIFICATION_REJECTED",
+      "VENUE_VERIFICATION_DELETED",
       // Payment types
       "PAYMENT_RECEIVED",
       "PAYMENT_FAILED",
