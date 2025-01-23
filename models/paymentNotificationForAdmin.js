@@ -52,6 +52,11 @@ const notificationSchema = new mongoose.Schema({
       "BLACKLIST_STATUS",
       // venueInterest
       "VENUE_INTEREST",
+      "VENUE_INTEREST_DELETED",
+      // serviceInterest
+      "SERVICE_INTEREST",
+      "SERVICE_INTEREST_DELETED",
+      // membership interest
     ],
     required: true,
   },

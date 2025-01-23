@@ -227,10 +227,127 @@ const getTicketByReference = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+
+// const registerFreeTicket = async (req, res) => {
+//   try {
+//     const { eventId, firstName, lastName, email, confirmEmail, phoneNumber } =
+//       req.body;
+//     const userId = req.user._id;
+
+//     // Validate event
+//     const event = await Event.findById(eventId);
+//     if (!event) {
+//       throw new Error("Event not found");
+//     }
+
+//     if (event.price !== 0) {
+//       throw new Error("This is not a free event");
+//     }
+
+//     // Validate email match
+//     if (email !== confirmEmail) {
+//       throw new Error("Email addresses do not match");
+//     }
+
+//     // Check for existing registration
+//     const existingRegistration = await EventRegistration.findOne({
+//       eventId,
+//       "attendeeDetails.email": email,
+//     });
+
+//     if (existingRegistration) {
+//       throw new Error(
+//         "This email address is already registered for this event"
+//       );
+//     }
+
+//     // Create a new registration document
+//     const registration = await EventRegistration.create({
+//       eventId,
+//       userId,
+//       registrationDate: new Date(),
+//       attendeeDetails: {
+//         firstName,
+//         lastName,
+//         email,
+//         phoneNumber,
+//       },
+//       status: "registered",
+//     });
+
+//     // Generate ticket for free event
+//     const ticket = await Ticket.create({
+//       ticketId: `TKT${Math.floor(Math.random() * 1000000)
+//         .toString()
+//         .padStart(6, "0")}`,
+//       eventId,
+//       userId,
+//       ownerId: event.ownerId,
+//       paymentReference: `FREE-${Date.now()}`,
+//       price: 0,
+//       status: "valid",
+//       purchaseDate: new Date(),
+//     });
+
+//     // Get user details for email
+//     const user = await User.findById(userId);
+
+//     // Send ticket email
+//     const emailResult = await sendTicketEmails([ticket], event, {
+//       email,
+//       username: `${firstName} ${lastName}`,
+//     });
+
+//     if (emailResult.failed.length > 0) {
+//       console.error("Failed to send ticket email:", emailResult.failed);
+//     }
+
+//     // Create success notification
+//     await PaymentNotification.create({
+//       userId,
+//       title: "Free Event Registration Successful",
+//       message: `Successfully registered for ${event.title}`,
+//       type: "success",
+//     });
+
+//     res.json({
+//       status: true,
+//       message: "Registration successful",
+//       registration,
+//       ticket,
+//     });
+//   } catch (error) {
+//     console.error("Free event registration error:", error);
+
+//     // Create failure notification
+//     if (req.user?._id) {
+//       await PaymentNotification.create({
+//         userId: req.user._id,
+//         title: "Event Registration Failed",
+//         message:
+//           error.message || "Unable to complete registration. Please try again.",
+//         type: "error",
+//       });
+//     }
+
+//     res.status(400).json({
+//       status: false,
+//       message: error.message || "Failed to register for event",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const registerFreeTicket = async (req, res) => {
   try {
-    const { eventId, firstName, lastName, email, confirmEmail, phoneNumber } =
-      req.body;
+    const { eventId, firstName, lastName, email, confirmEmail, phoneNumber } = req.body;
     const userId = req.user._id;
 
     // Validate event
@@ -255,9 +372,7 @@ const registerFreeTicket = async (req, res) => {
     });
 
     if (existingRegistration) {
-      throw new Error(
-        "This email address is already registered for this event"
-      );
+      throw new Error("This email address is already registered for this event");
     }
 
     // Create a new registration document
@@ -276,9 +391,7 @@ const registerFreeTicket = async (req, res) => {
 
     // Generate ticket for free event
     const ticket = await Ticket.create({
-      ticketId: `TKT${Math.floor(Math.random() * 1000000)
-        .toString()
-        .padStart(6, "0")}`,
+      ticketId: `TKT${Math.floor(Math.random() * 1000000).toString().padStart(6, "0")}`,
       eventId,
       userId,
       ownerId: event.ownerId,
@@ -301,12 +414,13 @@ const registerFreeTicket = async (req, res) => {
       console.error("Failed to send ticket email:", emailResult.failed);
     }
 
-    // Create success notification
+    // Create success notification with recipients
     await PaymentNotification.create({
       userId,
       title: "Free Event Registration Successful",
       message: `Successfully registered for ${event.title}`,
       type: "success",
+      recipients: [userId.toString(), event.ownerId.toString()], // Notify both user and event owner
     });
 
     res.json({
@@ -318,14 +432,14 @@ const registerFreeTicket = async (req, res) => {
   } catch (error) {
     console.error("Free event registration error:", error);
 
-    // Create failure notification
+    // Create failure notification with recipients
     if (req.user?._id) {
       await PaymentNotification.create({
         userId: req.user._id,
         title: "Event Registration Failed",
-        message:
-          error.message || "Unable to complete registration. Please try again.",
+        message: error.message || "Unable to complete registration. Please try again.",
         type: "error",
+        recipients: [req.user._id.toString()], // Notify only the user of the failure
       });
     }
 

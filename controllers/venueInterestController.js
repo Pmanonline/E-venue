@@ -103,10 +103,10 @@ const createVenueInterest = async (req, res) => {
   }
 };
 
-// Get venue interests
+
 const getVenueInterests = async (req, res) => {
   try {
-    const { venueId, status, startDate, endDate } = req.query;
+    const { venueId, status, startDate, endDate, title } = req.query;
     const query = {};
 
     // Build query
@@ -119,6 +119,14 @@ const getVenueInterests = async (req, res) => {
       };
     }
 
+    // Add title search by populating and filtering venues
+    let venueQuery = {};
+    if (title) {
+      venueQuery = {
+        title: { $regex: title, $options: 'i' }  // Case-insensitive search
+      };
+    }
+
     // Non-admin users can only view their own interests
     if (req.user.role !== "admin") {
       query.userId = req.user._id;
@@ -127,6 +135,25 @@ const getVenueInterests = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+
+    // First find matching venues if title search is present
+    let matchingVenueIds = [];
+    if (title) {
+      const matchingVenues = await Venue.find(venueQuery).select('_id');
+      matchingVenueIds = matchingVenues.map(venue => venue._id);
+      if (matchingVenueIds.length === 0) {
+        // Return empty results if no venues match the title
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          total: 0,
+          totalPages: 0,
+          currentPage: page,
+          interests: [],
+        });
+      }
+      query.venueId = { $in: matchingVenueIds };
+    }
 
     const total = await VenueInterest.countDocuments(query);
     const interests = await VenueInterest.find(query)

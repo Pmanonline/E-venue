@@ -124,6 +124,7 @@
 // module.exports = app;
 
 const express = require("express");
+const axios = require("axios");
 const path = require("path");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
@@ -152,6 +153,7 @@ const notificationRoutes = require("./routes/notificationRoute.js");
 const verifcationRoutes = require("./routes/verifcationRoute.js");
 const venueVerificatioRoute = require("./routes/venueVerificatioRoute.js");
 const venueInterestRoute = require("./routes/venueInterestRoute.js");
+const serviceInterestRoute = require("./routes/serviceInterestRoute.js");
 
 // Load env vars
 dotenv.config();
@@ -233,10 +235,79 @@ app.use("/api", notificationRoutes);
 app.use("/api", verifcationRoutes);
 app.use("/api", venueVerificatioRoute);
 app.use("/api", venueInterestRoute);
+app.use("/api", serviceInterestRoute);
 
 // Test route
 app.get("/", (req, res) => {
   res.json("This API is available!!...!!");
+});
+
+// getting nearBy location
+// In your backend
+app.post("/api/nearby-places", async (req, res) => {
+  const { lat, lng, radius, type } = req.body;
+
+  // Add validation
+  if (!lat || !lng) {
+    return res
+      .status(400)
+      .json({ error: "Latitude and Longitude are required" });
+  }
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=${type}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+    );
+    const data = await response.json();
+
+    // Log the response for debugging
+    console.log("Google Places API Response:", data);
+
+    res.json(data);
+  } catch (error) {
+    console.error("Nearby Places Fetch Error:", error);
+    res.status(500).json({ error: "Failed to fetch nearby places" });
+  }
+});
+
+app.post("/api/geocode", async (req, res) => {
+  try {
+    const { address } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ error: "Address is required" });
+    }
+
+    const googleMapsApiKey = "YOUR_GOOGLE_MAPS_API_KEY"; // Ensure this is set correctly
+    if (!googleMapsApiKey) {
+      console.error("Google Maps API Key is missing");
+      return res.status(500).json({ error: "API configuration error" });
+    }
+
+    const googleGeocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsApiKey}`;
+
+    const response = await axios.get(googleGeocodeUrl);
+
+    if (response.data.status === "OK" && response.data.results.length > 0) {
+      const location = response.data.results[0].geometry.location;
+
+      return res.json({
+        latitude: location.lat,
+        longitude: location.lng,
+        formattedAddress: response.data.results[0].formatted_address,
+      });
+    } else {
+      console.error("Geocoding response status:", response.data.status);
+      return res
+        .status(404)
+        .json({ error: "Could not geocode address", details: response.data });
+    }
+  } catch (error) {
+    console.error("Geocoding server error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: error.message });
+  }
 });
 
 // Error handling middleware

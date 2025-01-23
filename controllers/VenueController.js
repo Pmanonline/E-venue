@@ -4,6 +4,7 @@ const fs = require("fs");
 const VerificationRequest = require("../models/verificationRequestModel");
 const PaymentNotification = require("../models/paymentNotificationModdel");
 const mongoose = require("mongoose");
+const axios = require("axios");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -74,98 +75,57 @@ const deleteFromCloudinary = async (url) => {
   }
 };
 
-// const createVenue = async (req, res) => {
-//   try {
-//     console.log("Incoming request details:");
-//     console.log("Headers:", req.headers);
-//     console.log("Body:", req.body);
-//     console.log("Files:", req.files);
+// create coodinate
+const getCoordinates = async (address) => {
+  try {
+    // Validate address components
+    if (!address.street || !address.lga || !address.state) {
+      console.error("Incomplete address:", address);
+      return null;
+    }
 
-//     // Validate request
-//     if (!req.body) {
-//       return res.status(400).json({
-//         message: "No request body received",
-//         details: "Request body is empty or malformed",
-//       });
-//     }
+    const fullAddress = `${address.street}, ${address.lga}, ${address.state}`;
 
-//     let venueData;
-//     try {
-//       venueData = JSON.parse(req.body.venueData);
-//     } catch (error) {
-//       console.error("Error parsing venueData:", error, {
-//         receivedData: req.body.venueData,
-//         error: error.message,
-//       });
-//       return res.status(400).json({ message: "Invalid venueData format" });
-//     }
+    // More robust logging
+    console.log("Geocoding address:", fullAddress);
 
-//     // Extract user ID from the authenticated request
-//     const userId = req.user._id;
-//     if (!userId) {
-//       return res.status(401).json({ message: "Authentication required" });
-//     }
+    const response = await axios.get(
+      "https://maps.googleapis.com/maps/api/geocode/json",
+      {
+        params: {
+          address: fullAddress,
+          key: process.env.GOOGLE_MAPS_API_KEY, // Use environment variable
+        },
+        timeout: 5000, // Add timeout to prevent hanging
+      }
+    );
 
-//     // Initialize coverImageUrl as null
-//     let coverImageUrl = null;
+    console.log("Geocoding response status:", response.data.status);
+    console.log("Geocoding results:", response.data.results);
 
-//     // Upload cover image if provided
-//     if (req.files && req.files.coverImage) {
-//       try {
-//         coverImageUrl = await uploadToCloudinary(req.files.coverImage);
-//         console.log("Cover image uploaded:", coverImageUrl);
-//       } catch (error) {
-//         console.error("Error uploading cover image:", error);
-//         return res.status(500).json({ message: "Cover image upload failed" });
-//       }
-//     } else {
-//       console.log("No cover image provided, proceeding without it.");
-//     }
+    if (response.data.status === "OK" && response.data.results.length > 0) {
+      const location = response.data.results[0].geometry.location;
+      return {
+        latitude: location.lat,
+        longitude: location.lng,
+      };
+    } else {
+      console.warn("Geocoding failed:", {
+        status: response.data.status,
+        results: response.data.results,
+      });
+      return null;
+    }
+  } catch (error) {
+    console.error("Geocoding error:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    return null;
+  }
+};
 
-//     // Upload additional images if any
-//     let additionalImageUrls = [];
-//     if (req.files && req.files.additionalImages) {
-//       const additionalImages = Array.isArray(req.files.additionalImages)
-//         ? req.files.additionalImages
-//         : [req.files.additionalImages];
-
-//       for (const image of additionalImages) {
-//         try {
-//           const url = await uploadToCloudinary(image);
-//           additionalImageUrls.push(url);
-//         } catch (error) {
-//           console.error("Error uploading additional image:", error);
-//           // Continue with other images even if one fails
-//         }
-//       }
-//       console.log("Additional images uploaded:", additionalImageUrls);
-//     }
-
-//     // Create venue instance with createdBy and ownerId
-//     const venue = new Venue({
-//       ...venueData,
-//       coverImage: coverImageUrl, // This can be null if no image was uploaded
-//       additionalImages: additionalImageUrls,
-//       createdBy: userId, // Include the user ID
-//       ownerId: userId, // Include the user ID as owner
-//     });
-
-//     await venue.save();
-//     console.log("Venue created successfully:", venue);
-//     res.status(201).json(venue);
-//   } catch (error) {
-//     console.error("Error in createVenue:", error);
-//     res.status(500).json({
-//       message: "An error occurred while creating the venue",
-//       error: error.message,
-//       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-//     });
-//   }
-// };
-
-// Modified createVenue controller function
-
-const createVenue = async (req, res) => {
+async function createVenue(req, res) {
   try {
     console.log("Incoming request details:");
     console.log("Headers:", req.headers);
@@ -189,6 +149,18 @@ const createVenue = async (req, res) => {
         error: error.message,
       });
       return res.status(400).json({ message: "Invalid venueData format" });
+    }
+
+    // Geocode address
+    const coordinates = await getCoordinates(venueData.address);
+    if (coordinates) {
+      venueData.address.latitude = coordinates.latitude;
+      venueData.address.longitude = coordinates.longitude;
+    } else {
+      // Set default coordinates or log a warning
+      console.warn("Geocoding failed for address:", venueData.address);
+      venueData.address.latitude = null;
+      venueData.address.longitude = null;
     }
 
     // Validate required fields
@@ -272,55 +244,8 @@ const createVenue = async (req, res) => {
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-};
+}
 
-// const getAllVenues = async (req, res) => {
-//   try {
-//     const {
-//       page = 1,
-//       limit = 9,
-//       searchTerm,
-//       location,
-//       category,
-//       state,
-//     } = req.query;
-
-//     // Build filter object
-//     let filter = {};
-//     if (searchTerm) {
-//       filter.title = { $regex: searchTerm, $options: "i" };
-//     }
-//     if (location) {
-//       filter.location = location;
-//     }
-//     if (category) {
-//       filter.category = category;
-//     }
-//     if (state) {
-//       filter["address.state"] = state;
-//     }
-
-//     // Get total count for pagination
-//     const totalVenues = await Venue.countDocuments(filter);
-//     const totalPages = Math.ceil(totalVenues / limit);
-
-//     // Get paginated results
-//     const venues = await Venue.find(filter)
-//       .sort({ createdAt: -1 })
-//       .limit(limit * 1)
-//       .skip((page - 1) * limit)
-//       .exec();
-
-//     res.status(200).json({
-//       venues,
-//       totalPages,
-//       currentPage: page,
-//       totalVenues,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 const getAllVenues = async (req, res) => {
   try {
     const {
@@ -417,6 +342,9 @@ const getAllVenues = async (req, res) => {
         createdAt: 1,
         verified: 1,
         ownerId: 1,
+        averageRating: 1,
+        reviews: 1,
+        totalReviews: 1,
       })
       .sort({ createdAt: -1 })
       .limit(Number(limit))
@@ -630,9 +558,8 @@ const verifyVenue = async (req, res) => {
       // Update verification request status
       let verificationRequest;
       if (verificationId) {
-        verificationRequest = await VerificationRequest.findById(
-          verificationId
-        );
+        verificationRequest =
+          await VerificationRequest.findById(verificationId);
       } else {
         // Find the latest verification request
         verificationRequest = await VerificationRequest.findOne(

@@ -187,9 +187,45 @@ const reserveTicket = async (req, res) => {
   }
 };
 
+
+
+
+
+
+// const getAllEvents = async (req, res) => {
+//   try {
+//     const { searchTerm, location, category, state } = req.query; // Add state to the destructured query
+//     let events = await Event.find();
+
+//     if (searchTerm) {
+//       events = events.filter((event) =>
+//         event.title.toLowerCase().includes(searchTerm.toLowerCase())
+//       );
+//     }
+
+//     if (location) {
+//       events = events.filter((event) => event.location === location);
+//     }
+
+//     if (category) {
+//       events = events.filter((event) => event.eventType === category);
+//     }
+
+//     if (state) {
+//       // Add filtering by state
+//       events = events.filter((event) => event.state === state);
+//     }
+
+//     res.status(200).json(events);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
 const getAllEvents = async (req, res) => {
   try {
-    const { searchTerm, location, category, state } = req.query; // Add state to the destructured query
+    const { searchTerm, location, eventType, state } = req.query; // Change category to eventType to match frontend
     let events = await Event.find();
 
     if (searchTerm) {
@@ -202,13 +238,16 @@ const getAllEvents = async (req, res) => {
       events = events.filter((event) => event.location === location);
     }
 
-    if (category) {
-      events = events.filter((event) => event.eventType === category);
+    if (eventType) { // Changed from category to eventType
+      events = events.filter((event) => 
+        event.eventType.toLowerCase() === eventType.toLowerCase()
+      );
     }
 
     if (state) {
-      // Add filtering by state
-      events = events.filter((event) => event.state === state);
+      events = events.filter((event) => 
+        event.state.toLowerCase() === state.toLowerCase()
+      );
     }
 
     res.status(200).json(events);
