@@ -5,13 +5,16 @@ const authmiddleware = require("../config/authMiddleware");
 const {
   initializePayment,
   verifyPayment,
-  createPaymentNotification,
+  getVenueBookingByRef,
   getBookingByReference,
+  getAllBookings,
 } = require("../controllers/paymentController");
 
 // Payment routes
 router.post("/initialize", authmiddleware, initializePayment);
 router.get("/payment/verify", verifyPayment);
+router.get("/booking/:reference", getVenueBookingByRef);
 router.get("/payment/booking/:reference", getBookingByReference);
+router.get("/getAllBookings", getAllBookings);
 
 module.exports = router;

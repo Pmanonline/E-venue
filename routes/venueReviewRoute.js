@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createReview,
   getVenueReviews,
+  getAllVenueReviews,
   updateReview,
   deleteReview,
   toggleLikeReview,
@@ -11,6 +12,7 @@ const {
 
 router.post("/venue/reviews", createReview);
 router.get("/getVenueReviews/:venueId", getVenueReviews);
+router.get("/getAllVenueReviews", getAllVenueReviews);
 router.put("/venue/reviews/:id", updateReview);
 router.delete("/venue/deleteReview/:id", deleteReview);
 router.post("/venue/toggleLikeReview/:id", toggleLikeReview);

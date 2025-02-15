@@ -187,45 +187,9 @@ const reserveTicket = async (req, res) => {
   }
 };
 
-
-
-
-
-
-// const getAllEvents = async (req, res) => {
-//   try {
-//     const { searchTerm, location, category, state } = req.query; // Add state to the destructured query
-//     let events = await Event.find();
-
-//     if (searchTerm) {
-//       events = events.filter((event) =>
-//         event.title.toLowerCase().includes(searchTerm.toLowerCase())
-//       );
-//     }
-
-//     if (location) {
-//       events = events.filter((event) => event.location === location);
-//     }
-
-//     if (category) {
-//       events = events.filter((event) => event.eventType === category);
-//     }
-
-//     if (state) {
-//       // Add filtering by state
-//       events = events.filter((event) => event.state === state);
-//     }
-
-//     res.status(200).json(events);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-
 const getAllEvents = async (req, res) => {
   try {
-    const { searchTerm, location, eventType, state } = req.query; // Change category to eventType to match frontend
+    const { searchTerm, location, eventType, state, lga } = req.query;
     let events = await Event.find();
 
     if (searchTerm) {
@@ -238,15 +202,21 @@ const getAllEvents = async (req, res) => {
       events = events.filter((event) => event.location === location);
     }
 
-    if (eventType) { // Changed from category to eventType
-      events = events.filter((event) => 
-        event.eventType.toLowerCase() === eventType.toLowerCase()
+    if (eventType) {
+      events = events.filter(
+        (event) => event.eventType.toLowerCase() === eventType.toLowerCase()
       );
     }
 
     if (state) {
-      events = events.filter((event) => 
-        event.state.toLowerCase() === state.toLowerCase()
+      events = events.filter(
+        (event) => event.state.toLowerCase() === state.toLowerCase()
+      );
+    }
+
+    if (lga) {
+      events = events.filter(
+        (event) => event.lga.toLowerCase() === lga.toLowerCase()
       );
     }
 

@@ -52,6 +52,12 @@ const authmiddleware = async (req, res, next) => {
     // Debug logging
     console.log("Decoded Token:", decoded);
 
+    // Log token expiry time
+    if (decoded.exp) {
+      const expiryDate = new Date(decoded.exp * 1000); // Convert from seconds to milliseconds
+      console.log("Token Expiry Time:", expiryDate.toISOString());
+    }
+
     // Find user
     const user = await User.findById(decoded._id);
     console.log("user:", user);

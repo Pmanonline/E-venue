@@ -137,6 +137,7 @@ const http = require("http"); // Add this import
 const connectDB = require("./config/db.config");
 const { errorHandlingMiddleware } = require("./middlewares/errorHandling.js");
 const initializeSocket = require("./config/socket.js");
+const Booking = require("./models/bookingModel.js");
 
 // Route imports
 const Routes = require("./routes/route.js");
@@ -176,7 +177,7 @@ app.set("socketio", io);
 // Middleware setup
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://evenue.ng"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -309,6 +310,37 @@ app.post("/api/geocode", async (req, res) => {
       .json({ error: "Internal server error", details: error.message });
   }
 });
+
+// app.get("/api/booking/:reference", async (req, res) => {
+//   const { reference } = req.params;
+
+//   try {
+//     // Fetch booking details from the database
+//     const booking = await Booking.findOne({ paymentReference: reference });
+
+//     if (!booking) {
+//       return res
+//         .status(404)
+//         .json({ status: false, message: "Booking not found" });
+//     }
+
+//     // Return booking details as JSON
+//     res.json({
+//       status: true,
+//       data: {
+//         paymentReference: booking.paymentReference,
+//         venueName: booking.venueName || "N/A",
+//         fullName: booking.fullName || "N/A",
+//         eventDate: new Date(booking.eventDate).toLocaleDateString(),
+//         amount: booking.amount / 100,
+//         paymentStatus: booking.paymentStatus,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching booking details:", error);
+//     res.status(500).json({ status: false, message: "Internal Server Error" });
+//   }
+// });
 
 // Error handling middleware
 app.use(errorHandlingMiddleware);

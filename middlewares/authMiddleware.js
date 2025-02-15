@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel"); // Your user model
 
-const JWT_SECRET = process.env.JWT_SECRET; // Ensure you set this in your environment variables
+// utils/tokenUtils.js
+const JWT_SECRET = process.env.JWT_SECRET || "Qwe123123"; // Add fallback secret
 
 // Middleware to verify token
 const auth = async (req, res, next) => {

@@ -1,0 +1,101 @@
+{"level":"error","message":"This is an error message"}
+{"error":"Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 00721157ae682-6f94a40a397sm623557b3.110 - gsmtp","level":"error","message":"Error generating QR code or sending email","reference":"w3gkhu61j6"}
+{"error":"Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 3f1490d57ef6-e5acb243865sm1069248276.11 - gsmtp","level":"error","message":"Error generating QR code or sending email","reference":"w3gkhu61j6"}
+{"level":"error","message":"This is an error message"}
+{"error":"Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 4fb4d7f45d1cf-5dc723ea052sm3995897a12.27 - gsmtp","level":"error","message":"Error generating QR code or sending email","reference":"w3gkhu61j6"}
+{"error":"Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 3f1490d57ef6-e5acb28012csm1109291276.23 - gsmtp","level":"error","message":"Error generating QR code or sending email","reference":"w3gkhu61j6"}
+{"error":"Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 3f1490d57ef6-e5acb283b88sm1106536276.13 - gsmtp","level":"error","message":"Error generating QR code or sending email","reference":"nnstltlfj5"}
+{"error":"Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 00721157ae682-6f8c463e5a8sm11517387b3.44 - gsmtp","level":"error","message":"Error generating QR code or sending email","reference":"nnstltlfj5"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"Error generating QR code for ticket TKT454572: The amount of data is too big to be stored in a QR Code","stack":"Error: The amount of data is too big to be stored in a QR Code\n    at createSymbol (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:405:11)\n    at Object.create (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:494:10)\n    at C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:71:29\n    at new Promise (<anonymous>)\n    at render (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:69:12)\n    at Object.toDataURL (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:103:10)\n    at generateQRCode (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:379:40)\n    at verifyTicketPayment (C:\\Users\\user\\Documents\\Evenue\\server\\controllers\\ticketPaymentController.js:215:37)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"}
+{"level":"error","message":"Failed to generate QR code for ticket TKT454572"}
+{"level":"error","message":"Error generating QR code for ticket TKT454572: The amount of data is too big to be stored in a QR Code","stack":"Error: The amount of data is too big to be stored in a QR Code\n    at createSymbol (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:405:11)\n    at Object.create (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:494:10)\n    at C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:71:29\n    at new Promise (<anonymous>)\n    at render (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:69:12)\n    at Object.toDataURL (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:103:10)\n    at generateQRCode (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:379:40)\n    at sendTicketEmails (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:552:33)\n    at verifyTicketPayment (C:\\Users\\user\\Documents\\Evenue\\server\\controllers\\ticketPaymentController.js:238:31)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"}
+{"level":"error","message":"Failed to send ticket email for TKT454572: Failed to generate QR code","stack":"Error: Failed to generate QR code\n    at sendTicketEmails (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:554:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async verifyTicketPayment (C:\\Users\\user\\Documents\\Evenue\\server\\controllers\\ticketPaymentController.js:238:25)"}
+{"0":{"error":"Failed to generate QR code","ticketId":"TKT454572"},"level":"error","message":"Some ticket emails failed to send:"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"Error generating QR code for ticket TKT929910: The amount of data is too big to be stored in a QR Code","stack":"Error: The amount of data is too big to be stored in a QR Code\n    at createSymbol (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:405:11)\n    at Object.create (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:494:10)\n    at C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:71:29\n    at new Promise (<anonymous>)\n    at render (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:69:12)\n    at Object.toDataURL (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:103:10)\n    at generateQRCode (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:382:40)\n    at verifyTicketPayment (C:\\Users\\user\\Documents\\Evenue\\server\\controllers\\ticketPaymentController.js:215:37)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"}
+{"level":"error","message":"Failed to generate QR code for ticket TKT929910"}
+{"level":"error","message":"Error generating QR code for ticket TKT929910: The amount of data is too big to be stored in a QR Code","stack":"Error: The amount of data is too big to be stored in a QR Code\n    at createSymbol (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:405:11)\n    at Object.create (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\core\\qrcode.js:494:10)\n    at C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:71:29\n    at new Promise (<anonymous>)\n    at render (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:69:12)\n    at Object.toDataURL (C:\\Users\\user\\Documents\\Evenue\\server\\node_modules\\qrcode\\lib\\server.js:103:10)\n    at generateQRCode (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:382:40)\n    at sendTicketEmails (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:555:33)\n    at verifyTicketPayment (C:\\Users\\user\\Documents\\Evenue\\server\\controllers\\ticketPaymentController.js:238:31)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"}
+{"level":"error","message":"Failed to send ticket email for TKT929910: Failed to generate QR code","stack":"Error: Failed to generate QR code\n    at sendTicketEmails (C:\\Users\\user\\Documents\\Evenue\\server\\config\\ticketMailService.js:557:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async verifyTicketPayment (C:\\Users\\user\\Documents\\Evenue\\server\\controllers\\ticketPaymentController.js:238:25)"}
+{"0":{"error":"Failed to generate QR code","ticketId":"TKT929910"},"level":"error","message":"Some ticket emails failed to send:"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"error":"read ECONNRESET","level":"error","message":"Payment verification error","reference":"nckf5jt7ii"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}
+{"level":"error","message":"This is an error message"}

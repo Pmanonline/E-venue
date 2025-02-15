@@ -61,6 +61,36 @@ const getVenueReviews = async (req, res) => {
   }
 };
 
+// Get all venue reviews with pagination and population
+const getAllVenueReviews = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Find all reviews with populated fields
+    const reviews = await VenueReview.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("userId", "username image")
+      .populate("venueId", "title")
+      .lean();
+
+    // Get total count for pagination
+    const total = await VenueReview.countDocuments();
+
+    res.json({
+      reviews,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const updateReview = async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,17 +122,17 @@ const updateReview = async (req, res) => {
 const deleteReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
 
-    const review = await VenueReview.findOne({ _id: id, userId });
+    const review = await VenueReview.findById(id);
+
     if (!review) {
-      return res
-        .status(404)
-        .json({ message: "Review not found or unauthorized" });
+      return res.status(404).json({ message: "Review not found" });
     }
 
     const venueId = review.venueId;
-    await review.remove();
+
+    // Using deleteOne() instead of remove()
+    await VenueReview.deleteOne({ _id: id });
 
     // Update venue average rating
     await updateVenueRating(venueId);
@@ -153,6 +183,7 @@ async function updateVenueRating(venueId) {
 module.exports = {
   createReview,
   getVenueReviews,
+  getAllVenueReviews,
   updateReview,
   deleteReview,
   toggleLikeReview,

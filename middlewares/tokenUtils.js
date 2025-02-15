@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const generateToken = (userId) => {
-  const tokenLifetime = "30d";
+  const tokenLifetime = "1d";
   const token = jwt.sign({ _id: userId }, JWT_SECRET, {
     expiresIn: tokenLifetime,
   });

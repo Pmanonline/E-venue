@@ -10,7 +10,16 @@ const bookingSchema = new mongoose.Schema({
   venueId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Venue",
-    required: true,
+  },
+  eventId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Event",
+  },
+  venueName: {
+    type: String,
+  },
+  eventName: {
+    type: String,
   },
   eventDate: {
     type: Date,
@@ -29,6 +38,23 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+  },
+  qrCode: {
+    type: String,
+  },
+  fullName: {
+    type: String,
+  },
+  email: {
+    type: String,
+  },
+  phoneNumber: {
+    type: String,
+  },
+  bookingType: {
+    type: String,
+    enum: ["event", "venue"],
+    required: true,
   },
   createdAt: {
     type: Date,

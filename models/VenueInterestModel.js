@@ -12,6 +12,9 @@ const venueInterestSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  ownerId: {
+    type: String,
+  },
   fullName: {
     type: String,
     required: [true, "Full name is required"],

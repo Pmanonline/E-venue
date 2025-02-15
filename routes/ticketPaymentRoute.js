@@ -6,7 +6,7 @@ const {
   verifyTicketPayment,
   getTicketByReference,
   registerFreeTicket,
-  // getEventRegistrations,
+  getTicketById,
   getUserTickets,
 } = require("../controllers/ticketPaymentController");
 
@@ -17,11 +17,8 @@ router.post(
   initializeTicketPayment
 );
 router.get("/tickets/payment/verify", verifyTicketPayment);
-router.get(
-  "/tickets/reference/:reference",
-  authmiddleware,
-  getTicketByReference
-);
+router.get("/tickets/reference/:reference", getTicketByReference);
+router.get("/tickets/getTicketById/:ticketId", getTicketById);
 router.post("/tickets/register-free", authmiddleware, registerFreeTicket);
 // router.get("/events/registrations", authmiddleware, getEventRegistrations);
 router.get("/events/tickets", authmiddleware, getUserTickets);

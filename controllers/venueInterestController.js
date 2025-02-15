@@ -27,6 +27,7 @@ const createVenueInterest = async (req, res) => {
   try {
     const {
       venueId,
+      ownerId,
       fullName,
       email,
       phoneNumber,
@@ -62,6 +63,7 @@ const createVenueInterest = async (req, res) => {
     // Create venue interest
     const venueInterest = new VenueInterest({
       venueId,
+      ownerId,
       userId: req.user._id,
       fullName,
       email,
@@ -103,7 +105,6 @@ const createVenueInterest = async (req, res) => {
   }
 };
 
-
 const getVenueInterests = async (req, res) => {
   try {
     const { venueId, status, startDate, endDate, title } = req.query;
@@ -123,7 +124,7 @@ const getVenueInterests = async (req, res) => {
     let venueQuery = {};
     if (title) {
       venueQuery = {
-        title: { $regex: title, $options: 'i' }  // Case-insensitive search
+        title: { $regex: title, $options: "i" }, // Case-insensitive search
       };
     }
 
@@ -139,8 +140,8 @@ const getVenueInterests = async (req, res) => {
     // First find matching venues if title search is present
     let matchingVenueIds = [];
     if (title) {
-      const matchingVenues = await Venue.find(venueQuery).select('_id');
-      matchingVenueIds = matchingVenues.map(venue => venue._id);
+      const matchingVenues = await Venue.find(venueQuery).select("_id");
+      matchingVenueIds = matchingVenues.map((venue) => venue._id);
       if (matchingVenueIds.length === 0) {
         // Return empty results if no venues match the title
         return res.status(200).json({
@@ -172,6 +173,37 @@ const getVenueInterests = async (req, res) => {
     });
   } catch (error) {
     console.error("Get venue interests error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve venue interests",
+      error: error.message,
+    });
+  }
+};
+
+const getOwnerVenueInterests = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await VenueInterest.countDocuments();
+    const interests = await VenueInterest.find()
+      .populate("venueId", "title")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      count: interests.length,
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      interests,
+    });
+  } catch (error) {
+    console.error("Get all venue interests error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve venue interests",
@@ -231,9 +263,51 @@ const deleteVenueInterest = async (req, res) => {
     });
   }
 };
+const updateVenueInterestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
+    const interest = await VenueInterest.findById(id);
+    if (!interest) {
+      return res.status(404).json({
+        success: false,
+        message: "Venue interest not found",
+      });
+    }
+
+    // Authorization check
+    // if (
+    //   req.user.role !== "admin" &&
+    //   interest.userId.toString() !== req.user._id.toString()
+    // ) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "Not authorized to update this interest",
+    //   });
+    // }
+
+    interest.status = status;
+    await interest.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Venue interest status updated successfully",
+      interest,
+    });
+  } catch (error) {
+    console.error("Update venue interest status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update venue interest status",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   createVenueInterest,
   getVenueInterests,
+  getOwnerVenueInterests,
   deleteVenueInterest,
+  updateVenueInterestStatus,
 };

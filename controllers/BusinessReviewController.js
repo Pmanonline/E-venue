@@ -62,6 +62,33 @@ const getBusinessReviews = async (req, res) => {
   }
 };
 
+const getAllBusinessReviews = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const reviews = await Review.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("userId", "username profilePic")
+      .populate("businessId", "name")
+      .lean();
+
+    const total = await Review.countDocuments();
+
+    res.json({
+      reviews,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const updateReview = async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,10 +119,9 @@ const updateReview = async (req, res) => {
 
 const deleteReview = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { userId } = req.body;
+    const { id } = req.body;
 
-    const review = await Review.findOne({ _id: id, userId });
+    const review = await Review.findOne({ id });
     if (!review) {
       return res
         .status(404)
@@ -103,7 +129,7 @@ const deleteReview = async (req, res) => {
     }
 
     const businessId = review.businessId;
-    await review.remove();
+    await review.deleteOne({ _id: id });
 
     // Update business average rating
     await updateBusinessRating(businessId);
@@ -154,6 +180,7 @@ async function updateBusinessRating(businessId) {
 module.exports = {
   createReview,
   getBusinessReviews,
+  getAllBusinessReviews,
   updateReview,
   deleteReview,
   toggleLikeReview,
