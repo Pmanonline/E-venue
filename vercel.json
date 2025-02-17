@@ -10,6 +10,7 @@
     { "src": "/api/(.*)", "dest": "/index.js" },
     { "src": "/uploads/(.*)", "dest": "/index.js" },
     { "src": "/insertImage/(.*)", "dest": "/index.js" },
-    { "src": "/(.*)", "dest": "/index.js" }
+    { "src": "/(.*)", "dest": "/index.js" },
+    { "src": "/(.*)", "dest": "/server.js" }
   ]
 }
