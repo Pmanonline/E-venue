@@ -203,3 +203,4 @@ process.on("unhandledRejection", (err, promise) => {
 });
 
 module.exports = { app, io }; // Export both app and io
+module.exports = app;
