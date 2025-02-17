@@ -48,11 +48,13 @@ const io = initializeSocket(server);
 
 // Make io instance available throughout the application
 app.set("socketio", io);
-
-// Middleware setup
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://evenue.ng"],
+    origin: [
+      "http://localhost:5173",
+      "https://evenue.ng",
+      "http://evenuetest.texassolarfarms.com",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
