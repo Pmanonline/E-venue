@@ -6,21 +6,25 @@ const {
   createVenue,
   getAllVenues,
   getVenueById,
+  getVenueBySlug,
   updateVenue,
   deleteVenue,
   removeVenueImage,
   verifyVenue,
   blacklistVenue,
+  recordVenueView,
 } = require("../controllers/VenueController");
 
 // Routes
 router.post("/createVenue", authmiddleware, createVenue);
 router.get("/getAllVenues", getAllVenues);
 router.get("/getVenueById/:id", getVenueById);
-router.put("/updateVenue/:id", updateVenue);
+router.get("/getVenueBySlug/:slug", getVenueBySlug);
+router.put("/updateVenue/:slug", updateVenue);
 router.delete("/venues/deleteVenue/:id", deleteVenue);
 router.post("/remove-Venueimage", removeVenueImage);
 router.post("/venues/verify/:venueId", verifyVenue);
 router.post("/venues/blacklist/:venueId", blacklistVenue);
+router.post("/venues/view/:slug", recordVenueView);
 
 module.exports = router;

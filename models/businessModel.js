@@ -6,7 +6,38 @@ const businessSchema = new mongoose.Schema({
     ref: "User",
     default: null,
   },
+
   name: { type: String, required: true },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  // Add review-related fields
+  reviews: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Review",
+    },
+  ],
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5,
+  },
+  totalReviews: {
+    type: Number,
+    default: 0,
+  },
+  viewCount: {
+    type: Number,
+    default: 0,
+  },
+  lastViewed: {
+    type: Date,
+    default: Date.now,
+  },
   type: { type: String, required: true },
   address: {
     state: { type: String },
@@ -49,7 +80,47 @@ const businessSchema = new mongoose.Schema({
   },
   createdAt: { type: Date, default: Date.now },
 });
+// Add indexes for improved performance
+businessSchema.index({ averageRating: -1, totalReviews: -1 });
+businessSchema.index({ slug: 1 }, { unique: true });
 
+// Add review-related methods
+businessSchema.methods.getReviews = async function (page = 1, limit = 10) {
+  const skip = (page - 1) * limit;
+
+  const reviews = await mongoose
+    .model("Review")
+    .find({
+      businessId: this._id,
+      status: "active",
+    })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate("userId", "username image");
+
+  const total = await mongoose.model("Review").countDocuments({
+    businessId: this._id,
+    status: "active",
+  });
+
+  return {
+    reviews,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+    total,
+  };
+};
+
+// Method to get top rated businesses
+businessSchema.statics.getTopRated = async function (limit = 10) {
+  return this.find({
+    totalReviews: { $gt: 0 },
+  })
+    .sort({ averageRating: -1, totalReviews: -1 })
+    .limit(limit)
+    .select("name averageRating totalReviews coverImage");
+};
 // Method to verify a business
 businessSchema.methods.verify = async function (adminId, reason) {
   this.verified = true;

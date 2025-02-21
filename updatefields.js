@@ -2,25 +2,24 @@ const mongoose = require("mongoose");
 const connectDB = require("./config/db.config"); // Adjust the path to your db config file
 
 // Define a generic schema to interact with the collection
-const Event = mongoose.model(
-  "Event",
+const Businesz = mongoose.model(
+  "Businesz",
   new mongoose.Schema({}, { strict: false })
 );
 
-const updateFieldsInEvents = async () => {
+const updateFieldsInVenue = async () => {
   try {
     // Connect to the database
     await connectDB();
 
-    console.log("Updating fields in events collection...");
+    console.log("Updating fields in Businesz collection...");
 
-    // Update all events by adding the new fields
-    const result = await Event.updateMany(
+    // Update all Businesz by adding the new fields
+    const result = await Businesz.updateMany(
       {}, // Matches all documents
       {
         $set: {
-          lga: "Default LGA Value", // Replace with your desired default value
-          area: "Default Area Value", // Replace with your desired default value
+          slug: "", // Replace with your desired default value
         },
       }
     );
@@ -36,4 +35,4 @@ const updateFieldsInEvents = async () => {
 };
 
 // Run the update function
-updateFieldsInEvents();
+updateFieldsInVenue();

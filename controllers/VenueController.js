@@ -5,6 +5,7 @@ const VerificationRequest = require("../models/verificationRequestModel");
 const PaymentNotification = require("../models/paymentNotificationModdel");
 const mongoose = require("mongoose");
 const axios = require("axios");
+const slugify = require("slugify");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -150,7 +151,18 @@ async function createVenue(req, res) {
       });
       return res.status(400).json({ message: "Invalid venueData format" });
     }
+    // Generate a slug from title
+    let baseSlug = slugify(venueData.title, { lower: true, strict: true });
+    let uniqueSlug = baseSlug;
 
+    // Check if slug exists and append a number if necessary
+    let count = 1;
+    while (await Venue.exists({ slug: uniqueSlug })) {
+      uniqueSlug = `${baseSlug}-${count}`;
+      count++;
+    }
+
+    venueData.slug = uniqueSlug;
     // Geocode address
     const coordinates = await getCoordinates(venueData.address);
     if (coordinates) {
@@ -330,6 +342,8 @@ const getAllVenues = async (req, res) => {
     const venues = await Venue.find(filter)
       .select({
         title: 1,
+        slug: 1,
+        viewCount: 1,
         businessEmail: 1,
         businessPhoneNumbers: 1,
         capacity: 1,
@@ -382,14 +396,30 @@ const getVenueById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// Get a venue by slug
+const getVenueBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const venue = await Venue.findOne({ slug });
+
+    if (!venue) {
+      return res.status(404).json({ message: "Venue not found" });
+    }
+
+    res.status(200).json(venue);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Update a venue
 const updateVenue = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { slug } = req.params;
     const venueData = JSON.parse(req.body.venueData);
-    const venue = await Venue.findById(id);
 
+    // Find venue by slug
+    const venue = await Venue.findOne({ slug });
     if (!venue) {
       return res.status(404).json({ message: "Venue not found" });
     }
@@ -414,8 +444,10 @@ const updateVenue = async (req, res) => {
       venueData.additionalImages = await Promise.all(uploadPromises);
     }
 
-    const updatedVenue = await Venue.findByIdAndUpdate(id, venueData, {
-      new: true,
+    // Update venue using slug
+    const updatedVenue = await Venue.findOneAndUpdate({ slug }, venueData, {
+      new: true, // Return updated document
+      runValidators: true, // Ensure validation rules are applied
     });
 
     res.json(updatedVenue);
@@ -706,13 +738,38 @@ const blacklistVenue = async (req, res) => {
   }
 };
 
+const recordVenueView = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Find the venue by slug
+    const venue = await Venue.findOne({ slug });
+    if (!venue) {
+      return res.status(404).json({ error: "Venue not found" });
+    }
+
+    // Increment view count and update lastViewed timestamp
+    venue.viewCount = (venue.viewCount || 0) + 1;
+    venue.lastViewed = new Date();
+
+    await venue.save();
+
+    res.status(200).json({ success: true, viewCount: venue.viewCount });
+  } catch (error) {
+    console.error("Error recording venue view:", error);
+    res.status(500).json({ error: "Failed to record view" });
+  }
+};
+
 module.exports = {
   createVenue,
   getAllVenues,
   getVenueById,
+  getVenueBySlug,
   updateVenue,
   deleteVenue,
   removeVenueImage,
   verifyVenue,
   blacklistVenue,
+  recordVenueView,
 };

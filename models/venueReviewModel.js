@@ -57,55 +57,55 @@ reviewSchema.index({ userId: 1, venueId: 1 }, { unique: true });
 reviewSchema.index({ status: 1 });
 
 // Middleware to update venue ratings after saving a review
-reviewSchema.post('save', async function() {
-  const Venue = mongoose.model('Venue');
+reviewSchema.post("save", async function () {
+  const Venue = mongoose.model("Venue");
   const venue = await Venue.findById(this.venueId);
-  
+
   if (venue) {
     // Get all active reviews for this venue
     const reviews = await this.constructor.find({
       venueId: this.venueId,
-      status: 'active'
+      status: "active",
     });
-    
+
     // Calculate average rating
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
-    
+
     // Update venue with new rating data
     venue.reviews.push(this._id);
     venue.averageRating = Number(averageRating.toFixed(1));
     venue.totalReviews = reviews.length;
-    
+
     await venue.save();
   }
 });
 
 // Middleware to update venue ratings after deleting a review
-reviewSchema.post('remove', async function() {
-  const Venue = mongoose.model('Venue');
+reviewSchema.post("remove", async function () {
+  const Venue = mongoose.model("Venue");
   const venue = await Venue.findById(this.venueId);
-  
+
   if (venue) {
     // Remove this review from venue's reviews array
-    venue.reviews = venue.reviews.filter(review => 
-      review.toString() !== this._id.toString()
+    venue.reviews = venue.reviews.filter(
+      (review) => review.toString() !== this._id.toString()
     );
-    
+
     // Get remaining active reviews
     const reviews = await this.constructor.find({
       venueId: this.venueId,
-      status: 'active'
+      status: "active",
     });
-    
+
     // Recalculate average rating
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
-    
+
     // Update venue
     venue.averageRating = Number(averageRating.toFixed(1));
     venue.totalReviews = reviews.length;
-    
+
     await venue.save();
   }
 });

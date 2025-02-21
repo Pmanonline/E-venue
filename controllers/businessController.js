@@ -6,6 +6,7 @@ const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -94,6 +95,18 @@ const createBusiness = async (req, res) => {
     let businessData;
     try {
       businessData = JSON.parse(req.body.businessData);
+      // Generate slug from business name
+      let baseSlug = slugify(businessData.name, { lower: true, strict: true });
+      let uniqueSlug = baseSlug;
+      let count = 1;
+
+      // Ensure unique slug
+      while (await Businesz.exists({ slug: uniqueSlug })) {
+        uniqueSlug = `${baseSlug}-${count}`;
+        count++;
+      }
+
+      businessData.slug = uniqueSlug;
     } catch (error) {
       console.error("Error parsing businessData:", error, {
         receivedData: req.body.businessData,
@@ -181,7 +194,7 @@ const getAllBusinesses = asyncHandler(async (req, res) => {
 
     const businesses = await Businesz.find(query)
       .select(
-        "name type email phoneNumber verificationStatus blacklistStatus address yearsOfExperience bio coverImage additionalImages openingHours verified blacklisted blacklistDetails createdAt ownerId"
+        "name  slug totalReviews averageRating reviews viewCount  lastViewed type email phoneNumber verificationStatus blacklistStatus address yearsOfExperience bio coverImage additionalImages openingHours verified blacklisted blacklistDetails createdAt ownerId"
       ) // Include additional fields here
       .sort({ createdAt: -1 })
       .skip(skipIndex)
@@ -219,15 +232,55 @@ const getBusinessById = async (req, res) => {
     });
   }
 };
-const updateBusiness = async (req, res) => {
+
+// Add new getBusinessBySlug function
+const getBusinessBySlug = async (req, res) => {
   try {
-    const { id } = req.params;
-    const businessData = JSON.parse(req.body.businessData);
-    const business = await Businesz.findById(id);
+    const { slug } = req.params;
+    const business = await Businesz.findOne({ slug }).populate({
+      path: "createdBy",
+      select: "-password -refreshToken",
+    });
 
     if (!business) {
-      return res.status(404).json({ message: "Businesz not found" });
+      return res.status(404).json({ message: "Business not found" });
     }
+
+    res.status(200).json(business);
+  } catch (error) {
+    console.error("Error fetching business by slug:", error);
+    res.status(500).json({
+      message: "Error fetching business details",
+      error: error.message,
+    });
+  }
+};
+
+const updateBusiness = async (req, res) => {
+  try {
+    const { slug } = req.params; // Change from id to slug
+    const businessData = JSON.parse(req.body.businessData);
+    const business = await Businesz.findOne({ slug });
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    // Generate new slug if name is being updated
+    if (businessData.name && businessData.name !== business.name) {
+      let baseSlug = slugify(businessData.name, { lower: true, strict: true });
+      let uniqueSlug = baseSlug;
+      let count = 1;
+
+      while (
+        await Businesz.exists({ slug: uniqueSlug, _id: { $ne: business._id } })
+      ) {
+        uniqueSlug = `${baseSlug}-${count}`;
+        count++;
+      }
+
+      businessData.slug = uniqueSlug;
+    }
+    ``;
 
     // Handle cover image update
     if (req.files && req.files.coverImage) {
@@ -261,9 +314,11 @@ const updateBusiness = async (req, res) => {
       business.blacklisted = businessData.blacklisted;
     }
 
-    const updatedBusiness = await Businesz.findByIdAndUpdate(id, businessData, {
-      new: true,
-    });
+    const updatedBusiness = await Businesz.findOneAndUpdate(
+      { slug },
+      businessData,
+      { new: true }
+    );
 
     res.json(updatedBusiness);
   } catch (error) {
@@ -521,14 +576,40 @@ const blacklistBusiness = async (req, res) => {
     });
   }
 };
+// Add record view function
+const recordBusinessView = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const business = await Businesz.findOne({ slug });
+    if (!business) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+
+    business.viewCount = (business.viewCount || 0) + 1;
+    business.lastViewed = new Date();
+
+    await business.save();
+
+    res.status(200).json({
+      success: true,
+      viewCount: business.viewCount,
+    });
+  } catch (error) {
+    console.error("Error recording business view:", error);
+    res.status(500).json({ error: "Failed to record view" });
+  }
+};
 
 module.exports = {
   createBusiness,
   getAllBusinesses,
   getBusinessById,
+  getBusinessBySlug,
   updateBusiness,
   deleteBusiness,
   removeBusinessImage,
   verifyBusiness,
   blacklistBusiness,
+  recordBusinessView,
 };
