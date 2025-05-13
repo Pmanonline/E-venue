@@ -36,7 +36,9 @@ const sendBookingConfirmationEmail = async (
       <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
         <p><strong>Booking Reference:</strong> ${booking.paymentReference}</p>
         <p><strong>Amount Paid:</strong> ₦${booking.amount / 100}</p>
-        <p><strong>Event Date:</strong> ${new Date(booking.eventDate).toLocaleDateString()}</p>
+        <p><strong>Event Date:</strong> ${new Date(
+          booking.eventDate
+        ).toLocaleDateString()}</p>
         <p><strong>Status:</strong> ${booking.paymentStatus}</p>
       </div>
 
@@ -100,152 +102,6 @@ const generateQRCode = async (bookingData) => {
   }
 };
 
-// const verifyPayment = async (req, res) => {
-//   const { reference } = req.query;
-
-//   // Validate payment reference
-//   if (!reference || typeof reference !== "string") {
-//     logger.warn("Invalid payment reference provided", { reference });
-//     return res.status(400).json({
-//       status: false,
-//       message: "Invalid payment reference",
-//     });
-//   }
-
-//   // Check if payment has already been processed
-//   if (processedPayments.has(reference)) {
-//     logger.info(
-//       `Payment ${reference} already processed, skipping verification`
-//     );
-//     return res.redirect(
-//       `${process.env.FRONTEND_URL}/payment/success?reference=${reference}`
-//     );
-//   }
-
-//   try {
-//     // Verify payment with Paystack API
-//     const response = await axios.get(
-//       `https://api.paystack.co/transaction/verify/${reference}`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-//         },
-//       }
-//     );
-
-//     const { status, amount, metadata } = response.data.data;
-//     const success = status === "success";
-
-//     // Mark payment as processed to avoid duplicates
-//     processedPayments.add(reference);
-//     setTimeout(() => processedPayments.delete(reference), 1800000); // 30 minutes
-
-//     // Update booking status in the database
-//     const booking = await Booking.findOneAndUpdate(
-//       { paymentReference: reference },
-//       { paymentStatus: success ? "completed" : "failed" },
-//       { new: true }
-//     )
-//       .populate({
-//         path: "venueId",
-//         select: "title ownerId", // Only fetch necessary fields
-//       })
-//       .lean();
-
-//     if (!booking) {
-//       logger.error("Booking not found for reference", { reference });
-//       throw new Error("Booking not found");
-//     }
-
-//     // Ensure venueName is set
-//     if (booking.venueId && booking.venueId.title && !booking.venueName) {
-//       await Booking.findByIdAndUpdate(booking._id, {
-//         venueName: booking.venueId.title,
-//       });
-//       booking.venueName = booking.venueId.title;
-//     }
-
-//     // Handle successful payment
-//     if (success) {
-//       try {
-//         // Generate QR code for the booking
-//         const qrCodeDataUrl = await generateQRCode(booking);
-
-//         // Update booking with QR code
-//         await Booking.findByIdAndUpdate(booking._id, {
-//           qrCode: qrCodeDataUrl,
-//         });
-
-//         // Send confirmation email to the user
-//         if (booking.email) {
-//           await sendBookingConfirmationEmail(
-//             booking,
-//             qrCodeDataUrl,
-//             booking.email
-//           );
-//           logger.info("Confirmation email sent successfully", {
-//             email: booking.email,
-//           });
-//         } else {
-//           logger.warn("No email address found for booking", { reference });
-//         }
-//       } catch (qrError) {
-//         logger.error("Error generating QR code or sending email", {
-//           error: qrError.message,
-//           reference,
-//         });
-//       }
-//     }
-
-//     // Create payment notification for the user and venue owner
-//     await PaymentNotification.create({
-//       userId: booking.userId,
-//       title: success ? "Payment Successful" : "Payment Failed",
-//       message: success
-//         ? `Your payment of ₦${amount / 100} for ${booking.venueName || "venue booking"} was successful. Booking reference: ${reference}`
-//         : `Your venue booking payment of ₦${amount / 100} was not successful. Please try again or contact support.`,
-//       type: success ? "success" : "error",
-//       recipients: [
-//         booking.userId.toString(),
-//         booking.venueId.ownerId.toString(),
-//       ],
-//     });
-
-//     logger.info("Payment verification completed", {
-//       reference,
-//       status: success ? "success" : "failed",
-//     });
-
-//     // Redirect user to the appropriate frontend page
-//     res.redirect(
-//       `${process.env.FRONTEND_URL}/payment/${success ? "success" : "failed"}?reference=${reference}`
-//     );
-//   } catch (error) {
-//     logger.error("Payment verification error", {
-//       error: error.message,
-//       reference,
-//     });
-
-//     // Create a notification for payment verification failure
-//     const booking = await Booking.findOne({
-//       paymentReference: reference,
-//     });
-
-//     if (booking && !processedPayments.has(reference)) {
-//       await PaymentNotification.create({
-//         userId: booking.userId,
-//         title: "Payment Verification Failed",
-//         message:
-//           "We couldn't verify your payment. If you believe this is an error, please contact support.",
-//         type: "error",
-//         recipients: [booking.userId.toString()],
-//       });
-//     }
-
-//     // Redirect user to the failure page
-//     res.redirect(`${process.env.FRONTEND_URL}/payment/failed`);
-//   }
-// };
 const verifyPayment = async (req, res) => {
   const { reference } = req.query;
 
@@ -359,8 +215,12 @@ const verifyPayment = async (req, res) => {
       userId: booking.userId,
       title: success ? "Payment Successful" : "Payment Failed",
       message: success
-        ? `Your payment of ₦${amount / 100} for ${booking.venueName || "venue booking"} was successful. Booking reference: ${reference}`
-        : `Your venue booking payment of ₦${amount / 100} was not successful. Please try again or contact support.`,
+        ? `Your payment of ₦${amount / 100} for ${
+            booking.venueName || "venue booking"
+          } was successful. Booking reference: ${reference}`
+        : `Your venue booking payment of ₦${
+            amount / 100
+          } was not successful. Please try again or contact support.`,
       type: success ? "success" : "error",
       recipients: [
         booking.userId.toString(),
@@ -375,7 +235,9 @@ const verifyPayment = async (req, res) => {
 
     // Redirect user to the appropriate frontend page
     res.redirect(
-      `${process.env.FRONTEND_URL}/payment/${success ? "success" : "failed"}?reference=${reference}`
+      `${process.env.FRONTEND_URL}/payment/${
+        success ? "success" : "failed"
+      }?reference=${reference}`
     );
   } catch (error) {
     logger.error("Payment verification error", {
@@ -452,7 +314,9 @@ const initializePayment = async (req, res) => {
     await PaymentNotification.create({
       userId: metadata.userId,
       title: "Payment Initiated",
-      message: `Your payment of ₦${amount / 100} for ${metadata.venueName} has been initiated`,
+      message: `Your payment of ₦${amount / 100} for ${
+        metadata.venueName
+      } has been initiated`,
       type: "info",
       recipients: [metadata.userId.toString()],
     });
